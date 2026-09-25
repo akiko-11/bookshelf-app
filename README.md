@@ -1,66 +1,272 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# BookShelf 書籍レビューアプリ
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 概要
 
-## About Laravel
+書籍の登録・閲覧、レビュー投稿、お気に入り登録などを行うための書籍レビューアプリケーションです。
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+基本機能では、以下の機能を実装します。
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- 会員登録・ログイン・ログアウト
+- 書籍の登録・閲覧・編集・削除
+- レビューの投稿・編集・削除
+- お気に入り登録
+- レビューへのいいね
+- ジャンル管理
+- 書籍ランキング
+- 公開API（JSON）
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+基本機能の実装完了後、検索・外部API連携・読書レポートなどの応用機能を追加予定です。
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 環境構築
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+本プロジェクトは、Docker DesktopとLaravel Sailを使用して動作します。
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 前提条件
 
-## Laravel Sponsors
+以下を使用できる状態にしてください。
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Git
+- Docker Desktop
+- WSL2（Windowsの場合）
 
-### Premium Partners
+Docker Desktopを起動してから、WSLのターミナルで以降のコマンドを実行します。
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### 1. リポジトリをクローン
 
-## Contributing
+```bash
+git clone <GitHubリポジトリURL>
+cd bookshelf-app
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 2. Composer依存パッケージをインストール
 
-## Code of Conduct
+ローカル環境でComposerを使用できる場合は、以下を実行します。
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+composer install
+```
 
-## Security Vulnerabilities
+Composerを使用できない場合は、Dockerを利用してインストールします。
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+docker run --rm \
+  -u "$(id -u):$(id -g)" \
+  -v "$(pwd):/var/www/html" \
+  -w /var/www/html \
+  -e COMPOSER_CACHE_DIR=/tmp/composer_cache \
+  laravelsail/php82-composer:latest \
+  composer install
+```
 
-## License
+### 3. 環境設定ファイルを作成
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+cp .env.example .env
+```
+
+`.env`を開き、データベース接続情報を以下のように設定します。
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=sail
+DB_PASSWORD=password
+```
+
+### 4. Laravel Sailを起動
+
+```bash
+./vendor/bin/sail up -d
+```
+
+コンテナの状態を確認します。
+
+```bash
+./vendor/bin/sail ps
+```
+
+以下のサービスが起動していることを確認してください。
+
+- `laravel.test`
+- `mysql`
+- `phpmyadmin`
+
+### 5. アプリケーションキーを生成
+
+```bash
+./vendor/bin/sail artisan key:generate
+```
+
+### 6. フロントエンドの依存パッケージをインストール
+
+```bash
+./vendor/bin/sail npm install
+```
+
+### 7. マイグレーションと初期データを実行
+
+```bash
+./vendor/bin/sail artisan migrate --seed
+```
+
+既存のテーブルを削除して初期状態から作り直す場合は、以下を実行します。
+
+```bash
+./vendor/bin/sail artisan migrate:fresh --seed
+```
+
+> `migrate:fresh`を実行すると、データベース内の既存データはすべて削除されます。
+
+### 8. Vite開発サーバーを起動
+
+```bash
+./vendor/bin/sail npm run dev
+```
+
+画面を確認している間は、このコマンドを実行したままにしてください。
+
+停止する場合は、実行中のターミナルで `Ctrl + C` を押します。
+
+### 9. アクセス（URL）
+
+ブラウザで以下へアクセスします。
+
+| 画面 | URL |
+| --- | --- |
+| アプリケーション | `http://localhost` |
+| 会員登録 | `http://localhost/register` |
+| ログイン | `http://localhost/login` |
+| phpMyAdmin | `http://localhost:8080` |
+
+### 10. Sailエイリアスを設定（任意）
+
+毎回 `./vendor/bin/sail` と入力せず、`sail`のみで実行したい場合は以下を設定します。
+
+bashの場合：
+
+```bash
+echo "alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'" >> ~/.bashrc
+source ~/.bashrc
+```
+
+zshの場合：
+
+```bash
+echo "alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'" >> ~/.zshrc
+source ~/.zshrc
+```
+
+設定後は以下のように実行できます。
+
+```bash
+sail artisan migrate --seed
+sail npm run dev
+```
+
+### 11. コンテナを停止
+
+```bash
+./vendor/bin/sail down
+```
+
+### Apple Silicon搭載Macについて
+
+Apple Silicon搭載MacでSail起動時に以下のエラーが発生する場合があります。
+
+```text
+no matching manifest for linux/arm64/v8
+```
+
+その場合は、`compose.yaml`のMySQLサービスに以下を追加します。
+
+```yaml
+platform: 'linux/amd64'
+```
+
+---
+
+## 使用技術
+
+| 技術 | バージョン・用途 |
+| --- | --- |
+| HTML | 画面構造 |
+| Tailwind CSS | 3.4.19 / スタイル設定 |
+| Alpine.js | 3.17.4 / フロントエンド |
+| PHP | 8.5.7 |
+| Laravel | 10.50.3 |
+| MySQL | 8.4.10 |
+| Vite | フロントエンド開発環境 |
+| Docker | コンテナ環境 |
+| Laravel Sail | Docker開発環境の操作 |
+| phpMyAdmin | データベース管理 |
+
+※ 詳細なバージョンは開発環境確定後に更新します。
+
+---
+
+## ER図
+
+テーブル設計完了後に追加します。
+
+```mermaid
+erDiagram
+
+```
+
+### 制約
+
+テーブル設計完了後に記載します。
+
+### リレーション
+
+テーブル設計完了後に記載します。
+
+### 外部キー
+
+テーブル設計完了後に記載します。
+
+### 補助テーブルについて
+
+Laravel / Sanctum等が使用するフレームワーク用テーブルについては、業務テーブルとは分けて記載します。
+
+---
+
+## APIエンドポイント一覧
+
+基本機能では、以下の公開APIを実装します。
+
+| HTTPメソッド | URI | 概要 | 認証 |
+| --- | --- | --- | --- |
+| GET | `/api/v1/books` | 書籍一覧を取得 | 不要 |
+| GET | `/api/v1/books/{book}` | 書籍詳細を取得 | 不要 |
+| POST | `/api/v1/books` | 書籍を新規登録 | 不要 |
+| PUT | `/api/v1/books/{book}` | 書籍を更新 | 不要 |
+| DELETE | `/api/v1/books/{book}` | 書籍を削除 | 不要 |
+
+基本機能では公開APIに認証を設定しません。
+
+応用機能では、POST / PUT / DELETE の書き込み系APIにLaravel Sanctumによるトークン認証を追加予定です。
+
+---
+
+## ログイン情報
+
+Seeder実装後、以下の動作確認用ユーザーを利用できるようにします。
+
+| 名前 | メールアドレス | パスワード |
+| --- | --- | --- |
+| 山田太郎 | `yamada@example.com` | `password` |
+| 鈴木花子 | `suzuki@example.com` | `password` |
+| 田中一郎 | `tanaka@example.com` | `password` |
+| 佐藤美咲 | `sato@example.com` | `password` |
+| 高橋健太 | `takahashi@example.com` | `password` |
+
+---
+
+## 作成者
+
+渡利明子
