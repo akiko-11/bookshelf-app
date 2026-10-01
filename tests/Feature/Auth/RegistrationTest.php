@@ -18,7 +18,40 @@ class RegistrationTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'name' => 'お名前を入力してください。',
+            'name' => 'お名前を入力してください',
+        ]);
+
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    // 名前が256文字の場合、バリデーションに失敗する
+    public function test_name_with_256_characters_fails_registration(): void
+    {
+        $name = str_repeat('あ', 256);
+
+        $response = $this->post('/register', $this->validRegistrationData([
+            'name' => $name,
+        ]));
+
+        $response->assertSessionHasErrors([
+            'name' => 'お名前は255文字以内で入力してください',
+        ]);
+    }
+
+    // 名前が255文字の場合、正常に登録できる
+    public function test_name_with_255_characters_can_register(): void
+    {
+        $name = str_repeat('あ', 255);
+
+        $response = $this->post('/register', $this->validRegistrationData([
+            'name' => $name,
+        ]));
+
+        $response->assertRedirect('/');
+
+        $this->assertDatabaseHas('users', [
+            'name' => $name,
+            'email' => 'test@example.com',
         ]);
     }
 
@@ -30,7 +63,21 @@ class RegistrationTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'email' => 'メールアドレスを入力してください。',
+            'email' => 'メールアドレスを入力してください',
+        ]);
+    }
+
+    // メールアドレスが256文字以上の場合、バリデーションに失敗する
+    public function test_email_with_256_characters_fails_registration(): void
+    {
+        $email = $this->makeEmail(256);
+
+        $response = $this->post('/register', $this->validRegistrationData([
+            'email' => $email,
+        ]));
+
+        $response->assertSessionHasErrors([
+            'email' => 'メールアドレスは255文字以内で入力してください',
         ]);
     }
 
@@ -42,7 +89,7 @@ class RegistrationTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'email' => 'メールアドレスはメール形式で入力してください。',
+            'email' => 'メールアドレスはメール形式で入力してください',
         ]);
     }
 
@@ -58,7 +105,7 @@ class RegistrationTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'email' => '入力されたメールアドレスは既に登録されています。',
+            'email' => '入力されたメールアドレスは既に登録されています',
         ]);
 
         $this->assertDatabaseCount('users', 1);
@@ -72,7 +119,9 @@ class RegistrationTest extends TestCase
             'password_confirmation' => '1234567',
         ]));
 
-        $response->assertSessionHasErrors('password');
+        $response->assertSessionHasErrors([
+            'password' => 'パスワードは8文字以上で入力してください',
+        ]);
     }
 
     // パスワードが8文字の場合、正常に登録できる
@@ -98,7 +147,7 @@ class RegistrationTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'password' => 'パスワード確認と一致しません。',
+            'password' => 'パスワードと一致しません',
         ]);
     }
 
@@ -111,7 +160,7 @@ class RegistrationTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'password' => 'パスワードを入力してください。',
+            'password' => 'パスワードを入力してください',
         ]);
     }
 
@@ -139,5 +188,14 @@ class RegistrationTest extends TestCase
             'password' => 'password',
             'password_confirmation' => 'password',
         ], $overrides);
+    }
+
+    // メールアドレス作成
+    private function makeEmail(int $length): string
+    {
+        $domain = '@example.com';
+        $localLength = $length - strlen($domain);
+
+        return str_repeat('a', $localLength).$domain;
     }
 }

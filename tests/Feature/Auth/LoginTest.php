@@ -19,7 +19,7 @@ class LoginTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'email' => 'メールアドレスを入力してください。',
+            'email' => 'メールアドレスを入力してください',
         ]);
     }
 
@@ -31,7 +31,7 @@ class LoginTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'password' => 'パスワードを入力してください。',
+            'password' => 'パスワードを入力してください',
         ]);
     }
 
@@ -45,7 +45,7 @@ class LoginTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'email' => 'メールアドレスまたはパスワードが正しくありません。',
+            'email' => '入力情報が誤っています',
         ]);
 
         $this->assertGuest();
@@ -61,7 +61,7 @@ class LoginTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors([
-            'email' => 'メールアドレスまたはパスワードが正しくありません。',
+            'email' => '入力情報が誤っています',
         ]);
 
         $this->assertGuest();
