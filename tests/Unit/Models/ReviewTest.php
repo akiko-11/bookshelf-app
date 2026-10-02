@@ -47,7 +47,7 @@ class ReviewTest extends TestCase
 
         $likedUser->likedReviews()->attach($review->id);
 
-        $likedUsers = $review->likedUsers;
+        $likedUsers = $review->likedByUsers;
 
         $this->assertTrue($likedUsers->contains($likedUser));
     }
