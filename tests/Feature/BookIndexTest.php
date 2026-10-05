@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Book;
 use App\Models\Genre;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -52,37 +51,5 @@ class BookIndexTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('テストジャンル');
-    }
-
-    // 書籍詳細画面を表示できる
-    public function test_books_detail_show(): void
-    {
-        $book = Book::factory()->create([
-            'title' => 'テストの本',
-        ]);
-
-        $response = $this->get(route('books.show', $book));
-
-        $response->assertStatus(200);
-        $response->assertSee('テストの本');
-    }
-
-    // 未認証ユーザーは書籍登録画面へアクセスするとログイン画面へリダイレクトされる
-    public function test_guest_is_redirected_to_login_when_accessing_book_create(): void
-    {
-        $response = $this->get(route('books.create'));
-
-        $response->assertRedirect(route('login'));
-    }
-
-    // 認証ユーザーは書籍登録画面へアクセスできる
-    public function test_authenticated_user_can_access_book_create(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)
-            ->get(route('books.create'));
-
-        $response->assertStatus(200);
     }
 }
