@@ -282,7 +282,7 @@ class BookStoreValidationTest extends TestCase
         ]);
 
         $data = $this->validBookData($genre->id, [
-            'image_url' => str_repeat('a', 256),
+            'image_url' => 'https://example.com/'.str_repeat('a', 236),
         ]);
 
         $response = $this->actingAs($user)
