@@ -35,7 +35,7 @@ Route::post('/books/{book}/favorite', function () {
     ->name('favorites.toggle');
 
 Route::post('/books/{book}/reviews', function () {
-    return 'いいねボタンは未実装です';
+    return 'レビュー投稿は未実装です';
 })
     ->middleware('auth')
     ->name('reviews.store');
@@ -46,14 +46,6 @@ Route::post('/reviews/{review}/like', function () {
     ->middleware('auth')
     ->name('reviews.like');
 
-Route::post('/books', function () {
-    return '書籍登録処理は未実装です';
-})
-    ->middleware('auth')
-    ->name('books.store');
-
-Route::post('/books', function () {
-    return '書籍登録処理は未実装です';
-})
+Route::post('/books', [BookController::class, 'store'])
     ->middleware('auth')
     ->name('books.store');
