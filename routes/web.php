@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\FavoriteController;
 use Illuminate\Support\Facades\Route;
 
 // ゲストでも閲覧可能
@@ -28,9 +29,8 @@ Route::get('/genres', function () {
     return 'ジャンル画面は未実装です';
 })->name('genres.index');
 
-Route::post('/books/{book}/favorite', function () {
-    return 'お気に入りボタンは未実装です';
-})
+Route::post('/books/{book}/favorites',
+    [FavoriteController::class, 'toggle'])
     ->middleware('auth')
     ->name('favorites.toggle');
 
