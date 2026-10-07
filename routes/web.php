@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 // ゲストでも閲覧可能
@@ -34,9 +35,7 @@ Route::post('/books/{book}/favorites',
     ->middleware('auth')
     ->name('favorites.toggle');
 
-Route::post('/books/{book}/reviews', function () {
-    return 'レビュー投稿は未実装です';
-})
+Route::post('/books/{book}/reviews', [ReviewController::class, 'store'])
     ->middleware('auth')
     ->name('reviews.store');
 
