@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ReviewLikeController;
 use Illuminate\Support\Facades\Route;
 
 // ゲストでも閲覧可能
@@ -39,9 +40,7 @@ Route::post('/books/{book}/reviews', [ReviewController::class, 'store'])
     ->middleware('auth')
     ->name('reviews.store');
 
-Route::post('/reviews/{review}/like', function () {
-    return 'いいねボタンは未実装です';
-})
+Route::post('/reviews/{review}/like', [ReviewLikeController::class, 'toggle'])
     ->middleware('auth')
     ->name('reviews.like');
 
