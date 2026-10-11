@@ -98,7 +98,8 @@
                         <h2 class="text-xl font-bold mb-4">レビュー</h2>
 
                         @auth
-                            <!-- レビュー投稿フォーム -->
+                            <!-- 未投稿の場合のみレビュー投稿フォームを表示 -->
+                            @if (! $hasReviewed)
                             <div class="mb-6 bg-gray-50 p-4 rounded-lg">
                                 <h3 class="font-semibold mb-3">レビューを投稿</h3>
                                 <form action="{{ route('reviews.store', $book) }}" method="POST" novalidate>
@@ -133,6 +134,7 @@
                                     </div>
                                 </form>
                             </div>
+                            @endif
                         @else
                             <p class="mb-6 text-gray-600">
                                 レビューを投稿するには<a href="{{ route('login') }}" class="text-blue-600 hover:underline">ログイン</a>してください。

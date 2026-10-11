@@ -33,13 +33,27 @@ class BookController extends Controller
      */
     public function show(Book $book): View
     {
+        $user = auth()->user();
+
+        $hasReviewed = false;
+
+        // ログインユーザーがこの書籍にレビュー投稿済みか確認
+        if ($user) {
+            $hasReviewed = $user->reviews()
+                ->where('book_id', $book->id)
+                ->exists();
+        }
+
         $book->load([
             'genres',
             'reviews.user',
             'reviews.likedByUsers',
         ]);
 
-        return view('books.show', ['book' => $book]);
+        return view('books.show', [
+            'book' => $book,
+            'hasReviewed' => $hasReviewed,
+        ]);
     }
 
     /**

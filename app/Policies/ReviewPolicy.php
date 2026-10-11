@@ -14,4 +14,12 @@ class ReviewPolicy
     {
         return $user->id !== $review->user_id;
     }
+
+    /**
+     * ユーザーがレビューを編集できるか判定する。
+     */
+    public function update(User $user, Review $review): bool
+    {
+        return $user->id === $review->user_id;
+    }
 }

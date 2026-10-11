@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReviewRequest;
+use App\Http\Requests\UpdateReviewRequest;
 use App\Models\Book;
 use App\Models\Review;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
 class ReviewController extends Controller
@@ -29,5 +31,36 @@ class ReviewController extends Controller
         return redirect()
             ->route('books.show', $book)
             ->with('success', 'レビューを投稿しました。');
+    }
+
+    /**
+     * レビュー編集画面を表示する。
+     *
+     * @param  Review  $review  更新対象のレビュー
+     * @return View レビュー編集画面
+     */
+    public function edit(Review $review): View
+    {
+        $this->authorize('update', $review);
+
+        return view('reviews.edit', compact('review'));
+    }
+
+    /**
+     * レビューを更新し、書籍詳細画面へリダイレクトする。
+     *
+     * @param  Review  $review  更新対象のレビュー
+     * @param  UpdateReviewRequest  $request  レビュー更新リクエスト
+     * @return RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
+     */
+    public function update(Review $review, UpdateReviewRequest $request): RedirectResponse
+    {
+        $this->authorize('update', $review);
+
+        $review->update($request->validated());
+
+        return redirect()
+            ->route('books.show', $review->book)
+            ->with('success', 'レビューを更新しました。');
     }
 }
