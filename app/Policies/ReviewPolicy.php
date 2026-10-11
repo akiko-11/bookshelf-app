@@ -22,4 +22,12 @@ class ReviewPolicy
     {
         return $user->id === $review->user_id;
     }
+
+    /**
+     * ユーザーがレビューを削除できるか判定する。
+     */
+    public function delete(User $user, Review $review): bool
+    {
+        return $user->id === $review->user_id;
+    }
 }

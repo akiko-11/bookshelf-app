@@ -52,6 +52,10 @@ Route::put('/reviews/{review}', [ReviewController::class, 'update'])
     ->middleware('auth')
     ->name('reviews.update');
 
+Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('reviews.destroy');
+
 Route::post('/books', [BookController::class, 'store'])
     ->middleware('auth')
     ->name('books.store');
