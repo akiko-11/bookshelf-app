@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBookRequest;
+use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Genre;
 use Illuminate\Contracts\View\View;
@@ -94,5 +95,56 @@ class BookController extends Controller
         return redirect()
             ->route('books.show', $book)
             ->with('success', '書籍を登録しました。');
+    }
+
+    /**
+     * 書籍編集画面を表示する。
+     *
+     * @param  Book  $book  更新対象の書籍
+     * @return View 書籍編集画面
+     */
+    public function edit(Book $book): View
+    {
+        $this->authorize('update', $book);
+
+        $genres = Genre::all();
+
+        return view('books.edit', compact('book', 'genres'));
+    }
+
+    /**
+     * 書籍を更新し、選択されたジャンルを紐付ける。
+     *
+     * @param  Book  $book  更新対象の書籍
+     * @param  UpdateBookRequest  $request  バリデーション済みの書籍更新リクエスト
+     * @return RedirectResponse 更新した書籍の詳細画面へのリダイレクト
+     */
+    public function update(Book $book, UpdateBookRequest $request): RedirectResponse
+    {
+        $this->authorize('update', $book);
+
+        $data = $request->validated();
+
+        $genreIds = $data['genres'];
+        unset($data['genres']);
+
+        try {
+            DB::transaction(function () use ($book, $data, $genreIds) {
+                $book->update($data);
+                $book->genres()->sync($genreIds);
+            });
+
+            return redirect()
+                ->route('books.show', $book)
+                ->with('success', '書籍を更新しました。');
+
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', '書籍の更新に失敗しました。');
+        }
     }
 }

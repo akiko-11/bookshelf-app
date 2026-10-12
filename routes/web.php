@@ -19,6 +19,14 @@ Route::get('/books/create', [BookController::class, 'create'])
 Route::get('/books/{book}', [BookController::class, 'show'])
     ->name('books.show');
 
+Route::get('/books/{book}/edit', [BookController::class, 'edit'])
+    ->middleware('auth')
+    ->name('books.edit');
+
+Route::put('/books/{book}', [BookController::class, 'update'])
+    ->middleware('auth')
+    ->name('books.update');
+
 Route::get('/ranking', function () {
     return 'ランキング画面は未実装です';
 })->name('ranking.index');
