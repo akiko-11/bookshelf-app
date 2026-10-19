@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Book;
+use App\Models\Review;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreReviewRequest extends FormRequest
 {
@@ -35,5 +38,35 @@ class StoreReviewRequest extends FormRequest
             'comment.string' => 'コメントは文字列で入力してください',
             'comment.max' => 'コメントは1000文字以内で入力してください',
         ];
+    }
+
+    /**
+     * 同一ユーザーによる同一書籍へのレビュー重複投稿を検証する。
+     *
+     * @param  Validator  $validator  バリデーター
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $user = $this->user();
+            $book = $this->route('book');
+
+            // ログインユーザーがいない、またはBookモデルを取得できなかった場合
+            if (! $user || ! ($book instanceof Book)) {
+                return;
+            }
+
+            // 同じユーザーが同じ書籍にレビュー投稿済み確認
+            $hasReviewed = Review::where('user_id', $user->id)
+                ->where('book_id', $book->id)
+                ->exists();
+
+            if ($hasReviewed) {
+                $validator->errors()->add(
+                    'review',
+                    'この書籍には既にレビューを投稿しています。'
+                );
+            }
+        });
     }
 }
