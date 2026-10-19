@@ -14,4 +14,12 @@ class BookPolicy
     {
         return $user->id === $book->user_id;
     }
+
+    /**
+     * ユーザーが書籍を削除できるか判定する。
+     */
+    public function delete(User $user, Book $book): bool
+    {
+        return $user->id === $book->user_id;
+    }
 }

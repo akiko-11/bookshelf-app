@@ -147,4 +147,21 @@ class BookController extends Controller
                 ->with('error', '書籍の更新に失敗しました。');
         }
     }
+
+    /**
+     * 書籍を削除し、書籍詳細画面へリダイレクトする。
+     *
+     * @param  Book  $book  削除対象の書籍
+     * @return RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
+     */
+    public function destroy(Book $book): RedirectResponse
+    {
+        $this->authorize('delete', $book);
+
+        $book->delete();
+
+        return redirect()
+            ->route('books.index')
+            ->with('success', '書籍を削除しました。');
+    }
 }
