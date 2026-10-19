@@ -35,9 +35,10 @@ Route::get('/ranking', function () {
     return 'ランキング画面は未実装です';
 })->name('ranking.index');
 
-Route::get('/favorites', function () {
-    return 'お気に入り画面は未実装です';
-})->name('favorites.index');
+Route::get('/favorites',
+    [FavoriteController::class, 'index'])
+    ->middleware('auth')
+    ->name('favorites.index');
 
 Route::get('/genres', function () {
     return 'ジャンル画面は未実装です';

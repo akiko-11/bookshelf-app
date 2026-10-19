@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Favorite;
 
 use App\Models\Book;
 use App\Models\User;
