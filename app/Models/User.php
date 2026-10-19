@@ -78,7 +78,7 @@ class User extends Authenticatable
             'favorites',
             'user_id',
             'book_id'
-        );
+        )->withTimestamps();
     }
 
     /**
