@@ -66,7 +66,11 @@ class FavoriteIndexTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee(
-            'href="'.route('books.show', $book).'"',
+            'href="'.e(route('books.show', [
+                'book' => $book,
+                'from' => 'favorites',
+                'page' => 1,
+            ])).'"',
             false
         );
     }

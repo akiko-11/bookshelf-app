@@ -35,6 +35,27 @@ class FavoriteController extends Controller
             $user->favoriteBooks()->attach($book->id);
         }
 
-        return redirect()->route('books.show', $book);
+        $from = request()->input('from');
+
+        if ($from === 'favorites') {
+            // お気に入り一覧から来た場合、1ページ目に戻す
+            $params = [
+                'book' => $book,
+                'from' => 'favorites',
+                'page' => 1,
+            ];
+        } elseif ($from === 'books') {
+            // 書籍一覧から来た場合、元のページ番号を保持
+            $params = [
+                'book' => $book,
+                'from' => 'books',
+                'page' => max(1, (int) request()->input('page', 1)),
+            ];
+        } else {
+            // アクセス元が指定されていない場合
+            $params = ['book' => $book];
+        }
+
+        return redirect()->route('books.show', $params);
     }
 }
