@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreGenreRequest;
+use App\Http\Requests\UpdateGenreRequest;
 use App\Models\Genre;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -63,5 +64,34 @@ class GenreController extends Controller
         return redirect()
             ->route('genres.index')
             ->with('success', 'ジャンルを作成しました。');
+    }
+
+    /**
+     * ジャンルの編集画面を表示する。
+     *
+     * @param  Genre  $genre  対象のジャンル
+     * @return View ジャンル編集画面
+     */
+    public function edit(Genre $genre): View
+    {
+        return view('genres.edit', compact('genre'));
+    }
+
+    /**
+     * 入力されたジャンルを更新する。
+     *
+     * @param  UpdateGenreRequest  $request  ジャンル更新リクエスト
+     * @param  Genre  $genre  更新対象のジャンル
+     * @return RedirectResponse ジャンル一覧画面へのリダイレクト
+     */
+    public function update(UpdateGenreRequest $request, Genre $genre): RedirectResponse
+    {
+        $data = $request->validated();
+
+        $genre->update($data);
+
+        return redirect()
+            ->route('genres.index')
+            ->with('success', 'ジャンルを更新しました。');
     }
 }

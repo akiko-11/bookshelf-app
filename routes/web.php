@@ -61,9 +61,15 @@ Route::get('/genres/{genre}',
     ->middleware('auth')
     ->name('genres.show');
 
-Route::get('/genres/{genre}/edit', function () {
-    return 'ジャンル編集は未実装です';
-})->name('genres.edit');
+Route::get('/genres/{genre}/edit',
+    [GenreController::class, 'edit'])
+    ->middleware('auth')
+    ->name('genres.edit');
+
+Route::put('/genres/{genre}',
+    [GenreController::class, 'update'])
+    ->middleware('auth')
+    ->name('genres.update');
 
 Route::delete('/genres/{genre}', function () {
     return 'ジャンル削除は未実装です';
