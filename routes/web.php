@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\GenreController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewLikeController;
 use Illuminate\Support\Facades\Route;
@@ -40,9 +41,26 @@ Route::get('/favorites',
     ->middleware('auth')
     ->name('favorites.index');
 
-Route::get('/genres', function () {
-    return 'ジャンル画面は未実装です';
-})->name('genres.index');
+Route::get('/genres',
+    [GenreController::class, 'index'])
+    ->middleware('auth')
+    ->name('genres.index');
+
+Route::get('/genres/create', function () {
+    return 'ジャンル登録は未実装です';
+})->name('genres.create');
+
+Route::get('/genres/{genre}', function () {
+    return 'ジャンル詳細は未実装です';
+})->name('genres.show');
+
+Route::get('/genres/{genre}/edit', function () {
+    return 'ジャンル編集は未実装です';
+})->name('genres.edit');
+
+Route::delete('/genres/{genre}', function () {
+    return 'ジャンル削除は未実装です';
+})->name('genres.destroy');
 
 Route::post('/books/{book}/favorites',
     [FavoriteController::class, 'toggle'])
