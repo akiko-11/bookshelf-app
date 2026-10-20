@@ -18,4 +18,21 @@ class GenreController extends Controller
 
         return view('genres.index', ['genres' => $genres]);
     }
+
+    /**
+     * 指定されたジャンルの詳細画面を表示する。
+     *
+     * @param  Genre  $genre  対象のジャンル
+     * @return View ジャンル詳細画面
+     */
+    public function show(Genre $genre): View
+    {
+        $books = $genre->books()
+            ->paginate(10);
+
+        return view('genres.show', [
+            'genre' => $genre,
+            'books' => $books,
+        ]);
+    }
 }

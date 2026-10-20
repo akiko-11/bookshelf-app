@@ -50,9 +50,10 @@ Route::get('/genres/create', function () {
     return 'ジャンル登録は未実装です';
 })->name('genres.create');
 
-Route::get('/genres/{genre}', function () {
-    return 'ジャンル詳細は未実装です';
-})->name('genres.show');
+Route::get('/genres/{genre}',
+    [GenreController::class, 'show'])
+    ->middleware('auth')
+    ->name('genres.show');
 
 Route::get('/genres/{genre}/edit', function () {
     return 'ジャンル編集は未実装です';
