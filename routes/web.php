@@ -46,9 +46,15 @@ Route::get('/genres',
     ->middleware('auth')
     ->name('genres.index');
 
-Route::get('/genres/create', function () {
-    return 'ジャンル登録は未実装です';
-})->name('genres.create');
+Route::get('/genres/create',
+    [GenreController::class, 'create'])
+    ->middleware('auth')
+    ->name('genres.create');
+
+Route::post('/genres',
+    [GenreController::class, 'store'])
+    ->middleware('auth')
+    ->name('genres.store');
 
 Route::get('/genres/{genre}',
     [GenreController::class, 'show'])
