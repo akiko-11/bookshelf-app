@@ -71,9 +71,10 @@ Route::put('/genres/{genre}',
     ->middleware('auth')
     ->name('genres.update');
 
-Route::delete('/genres/{genre}', function () {
-    return 'ジャンル削除は未実装です';
-})->name('genres.destroy');
+Route::delete('/genres/{genre}',
+    [GenreController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('genres.destroy');
 
 Route::post('/books/{book}/favorites',
     [FavoriteController::class, 'toggle'])

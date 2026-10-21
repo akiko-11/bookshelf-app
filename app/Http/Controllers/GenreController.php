@@ -94,4 +94,26 @@ class GenreController extends Controller
             ->route('genres.index')
             ->with('success', 'ジャンルを更新しました。');
     }
+
+    /**
+     * 選択されたジャンルを削除する。
+     *
+     * @param  Genre  $genre  削除対象のジャンル
+     * @return RedirectResponse ジャンル一覧画面へのリダイレクト
+     */
+    public function destroy(Genre $genre): RedirectResponse
+    {
+        // 書籍が紐付いている場合は削除しない
+        if ($genre->books()->exists()) {
+            return redirect()
+                ->route('genres.index')
+                ->with('error', 'このジャンルには書籍が紐付いているため削除できません。');
+        }
+
+        $genre->delete();
+
+        return redirect()
+            ->route('genres.index')
+            ->with('success', 'ジャンルを削除しました。');
+    }
 }
