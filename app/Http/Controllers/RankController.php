@@ -14,12 +14,13 @@ class RankController extends Controller
      */
     public function index(): View
     {
-        $rankedBooks = Book::has('reviews')
-            ->withCount('reviews')
+        $rankedBooks = Book::query()
+            ->has('reviews')
             ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->orderByDesc('reviews_avg_rating')
             ->orderByDesc('reviews_count')
-            ->orderBy('id')
+            ->orderBy('books.id')
             ->limit(10)
             ->get();
 

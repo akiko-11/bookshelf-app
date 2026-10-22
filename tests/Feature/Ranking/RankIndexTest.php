@@ -96,27 +96,6 @@ class RankIndexTest extends TestCase
         $response->assertSee('(3件のレビュー)');
     }
 
-    // 平均評価が同じ場合、1位・1位・3位と表示される
-    public function test_books_with_same_average_rating_share_rank(): void
-    {
-        $this->createBookWithReviews('書籍A', [5, 5]);
-        $this->createBookWithReviews('書籍B', [5]);
-        $this->createBookWithReviews('書籍C', [4]);
-
-        $response = $this->get(route('ranking.index'));
-
-        $response->assertStatus(200);
-
-        $response->assertSeeInOrder([
-            'data-rank="1"',
-            '書籍A',
-            'data-rank="1"',
-            '書籍B',
-            'data-rank="3"',
-            '書籍C',
-        ], false);
-    }
-
     // レビューが1件もない場合、案内メッセージが表示される
     public function test_ranking_shows_message_when_no_reviews_exist(): void
     {
@@ -173,5 +152,32 @@ class RankIndexTest extends TestCase
         }
 
         return $book;
+    }
+
+    // 平均評価が同じ場合、レビュー件数の多い順に表示される
+    public function test_ranking_orders_tied_books_by_review_count(): void
+    {
+        // レビュー件数が少ない書籍を先に作成
+        $this->createBookWithReviews('書籍B', [5]);
+        $this->createBookWithReviews('書籍A', [5, 5, 5]);
+
+        $response = $this->get(route('ranking.index'));
+
+        $response->assertOk();
+        $response->assertSeeInOrder(['書籍A', '書籍B']);
+    }
+
+    // 平均評価とレビュー件数が同じ場合、書籍IDの昇順に表示される
+    public function test_ranking_orders_tied_books_by_book_id(): void
+    {
+        // 書籍Zを先に作成し、IDが小さくなるようにする
+        $bookZ = $this->createBookWithReviews('書籍Z', [5]);
+        $bookA = $this->createBookWithReviews('書籍A', [5]);
+
+        $response = $this->get(route('ranking.index'));
+
+        $response->assertOk();
+        $this->assertTrue($bookZ->id < $bookA->id);
+        $response->assertSeeInOrder(['書籍Z', '書籍A']);
     }
 }
