@@ -36,6 +36,7 @@ class FavoriteController extends Controller
         }
 
         $from = request()->input('from');
+        $page = max(1, (int) request()->input('page', 1));
 
         if ($from === 'favorites') {
             // お気に入り一覧から来た場合、1ページ目に戻す
@@ -49,7 +50,15 @@ class FavoriteController extends Controller
             $params = [
                 'book' => $book,
                 'from' => 'books',
-                'page' => max(1, (int) request()->input('page', 1)),
+                'page' => $page,
+            ];
+        } elseif ($from === 'genre' && request()->filled('genre_id')) {
+            // ジャンル詳細から来た場合、ジャンルIDとページ番号を保持
+            $params = [
+                'book' => $book,
+                'from' => 'genre',
+                'genre_id' => request()->input('genre_id'),
+                'page' => $page,
             ];
         } else {
             // アクセス元が指定されていない場合

@@ -1,8 +1,9 @@
 <?php
 
-namespace Tests\Feature\Book;
+namespace Tests\Feature\Navigation;
 
 use App\Models\Book;
+use App\Models\Genre;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -54,25 +55,6 @@ class BookBackNavigationTest extends TestCase
                 'from' => 'favorites',
                 'page' => 2,
             ])).'"',
-            false
-        );
-    }
-
-    // 書籍一覧から詳細画面へ遷移した場合、元のページに戻れる
-    public function test_can_return_to_origin_page_when_moving_from_books_list_to_book_detail(): void
-    {
-        $book = Book::factory()->create();
-
-        $response = $this->get(route('books.show', [
-            'book' => $book,
-            'from' => 'books',
-            'page' => 2,
-        ]));
-
-        $response->assertStatus(200);
-
-        $response->assertSee(
-            'href="'.route('books.index', ['page' => 2]).'"',
             false
         );
     }
@@ -193,6 +175,129 @@ class BookBackNavigationTest extends TestCase
 
         $response->assertSee(
             'href="'.route('books.index', ['page' => 1]).'"',
+            false
+        );
+    }
+
+    // ジャンル詳細画面からジャンル一覧に戻るリンクが表示される
+    public function test_genre_detail_has_back_link_to_genre_list(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::create(['name' => '小説']);
+
+        $response = $this->actingAs($user)
+            ->get(route('genres.show', $genre));
+
+        $response->assertOk();
+        $response->assertSee(
+            'href="'.route('genres.index').'"',
+            false
+        );
+    }
+
+    // ジャンル詳細の2ページ目から書籍詳細へ遷移する際、アクセス元情報を渡せる
+    public function test_book_link_preserves_genre_and_page(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::create(['name' => '小説']);
+
+        // 2ページ目を作るため11冊登録
+        $books = Book::factory()->count(11)->create();
+        $genre->books()->attach($books->pluck('id')->all());
+
+        $response = $this->actingAs($user)
+            ->get(route('genres.show', [
+                'genre' => $genre,
+                'page' => 2,
+            ]));
+
+        $response->assertOk();
+
+        // 2ページ目に表示された書籍を取得
+        $book = $response->viewData('books')->items()[0];
+
+        // 書籍詳細へのリンクにジャンルIDとページ番号が含まれる
+        $response->assertSee(
+            'href="'.e(route('books.show', [
+                'book' => $book,
+                'from' => 'genre',
+                'genre_id' => $genre->id,
+                'page' => 2,
+            ])).'"',
+            false
+        );
+    }
+
+    // 書籍詳細から元のジャンル詳細の2ページ目に戻れる
+    public function test_book_detail_returns_to_original_genre_page(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::create(['name' => '小説']);
+        $book = Book::factory()->create();
+
+        $book->genres()->attach($genre->id);
+
+        $response = $this->actingAs($user)
+            ->get(route('books.show', [
+                'book' => $book,
+                'from' => 'genre',
+                'genre_id' => $genre->id,
+                'page' => 2,
+            ]));
+
+        $response->assertOk();
+
+        // 戻り先が元のジャンル詳細2ページ目であること
+        $response->assertSee(
+            'href="'.route('genres.show', [
+                'genre' => $genre,
+                'page' => 2,
+            ]).'"',
+            false
+        );
+    }
+
+    // ジャンル詳細からの遷移後、お気に入り登録してもアクセス元情報を保持する
+    public function test_favorite_toggle_preserves_genre_context(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::create(['name' => '小説']);
+        $book = Book::factory()->create();
+
+        $book->genres()->attach($genre->id);
+
+        $params = [
+            'book' => $book,
+            'from' => 'genre',
+            'genre_id' => $genre->id,
+            'page' => 2,
+        ];
+
+        // お気に入り登録
+        $response = $this->actingAs($user)
+            ->post(route('favorites.toggle', $book), [
+                'from' => 'genre',
+                'genre_id' => $genre->id,
+                'page' => 2,
+            ]);
+
+        $this->assertDatabaseHas('favorites', [
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+
+        // 遷移元情報を保持して書籍詳細へ戻ること
+        $response->assertRedirect(route('books.show', $params));
+
+        // 書籍詳細から元のジャンル詳細へ戻れること
+        $detailResponse = $this->get(route('books.show', $params));
+
+        $detailResponse->assertOk();
+        $detailResponse->assertSee(
+            'href="'.route('genres.show', [
+                'genre' => $genre,
+                'page' => 2,
+            ]).'"',
             false
         );
     }

@@ -36,6 +36,7 @@
 
                                             <input type="hidden" name="from" value="{{ request()->query('from', 'books') }}">
                                             <input type="hidden" name="page" value="{{ request()->query('page', 1) }}">
+                                            <input type="hidden" name="genre_id" value="{{ request()->query('genre_id') }}">
 
                                             <button type="submit" class="text-red-500 hover:text-red-700" title="お気に入りから削除">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
@@ -49,6 +50,7 @@
 
                                             <input type="hidden" name="from" value="{{ request()->query('from', 'books') }}">
                                             <input type="hidden" name="page" value="{{ request()->query('page', 1) }}">
+                                            <input type="hidden" name="genre_id" value="{{ request()->query('genre_id') }}">
 
                                             <button type="submit" class="text-gray-400 hover:text-red-500" title="お気に入りに追加">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -264,12 +266,20 @@
             @php
                 $from = request()->query('from');
                 $page = max(1, (int) request()->query('page', 1));
+                $genreId = request()->query('genre_id');
 
-                $backUrl = $from === 'favorites'
-                    ? route('favorites.index', ['page' => $page])
-                    : route('books.index', [
-                        'page' => $from === 'books' ? $page : 1
+                if ($from === 'favorites') {
+                    $backUrl = route('favorites.index', ['page' => $page]);
+                } elseif ($from === 'genre' && $genreId) {
+                    $backUrl = route('genres.show', [
+                        'genre' => $genreId,
+                        'page' => $page,
                     ]);
+                } else {
+                    $backUrl = route('books.index', [
+                        'page' => $from === 'books' ? $page : 1,
+                    ]);
+                }
             @endphp
             <div class="mt-4">
                 <a href="{{ $backUrl }}" class="text-blue-600 hover:underline">← 一覧に戻る</a>
