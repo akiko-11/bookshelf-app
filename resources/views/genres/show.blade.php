@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-4">
-                <a href="{{ route('books.index') }}" class="text-blue-600 hover:text-blue-800">← 書籍一覧に戻る</a>
+                <a href="{{ route('genres.index') }}" class="text-blue-600 hover:text-blue-800">← ジャンル一覧に戻る</a>
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -18,7 +18,12 @@
                     @else
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             @foreach($books as $book)
-                                <a href="{{ route('books.show', $book) }}" class="block border rounded-lg p-4 shadow hover:shadow-lg transition">
+                                <a href="{{ route('books.show', [
+                                    'book' => $book,
+                                    'from' => 'genre',
+                                    'genre_id' => $genre->id,
+                                    'page' => $books->currentPage(),
+                                ]) }}" class="block border rounded-lg p-4 shadow hover:shadow-lg transition">
                                     @if($book->image_url)
                                         <img src="{{ $book->image_url }}" alt="{{ $book->title }}" class="w-full h-48 object-cover mb-4 rounded">
                                     @else
