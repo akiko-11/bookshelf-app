@@ -20,7 +20,7 @@ class BookIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'keyword' => 'nullable|string',
+            'keyword' => 'nullable|string|max:255',
             'genre_id' => 'nullable|integer|exists:genres,id',
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:100',
@@ -30,6 +30,7 @@ class BookIndexRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'keyword.max' => 'キーワードは255文字以内で入力してください',
             'keyword.string' => 'キーワードは文字列で入力してください',
             'genre_id.integer' => 'ジャンルIDは整数で入力してください',
             'genre_id.exists' => '指定されたジャンルが存在しません',

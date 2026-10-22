@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\GenreController;
+use App\Http\Controllers\RankController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewLikeController;
 use Illuminate\Support\Facades\Route;
@@ -31,18 +33,49 @@ Route::put('/books/{book}', [BookController::class, 'update'])
     ->middleware('auth')
     ->name('books.update');
 
-Route::get('/ranking', function () {
-    return 'ランキング画面は未実装です';
-})->name('ranking.index');
+Route::get('/ranking',
+    [RankController::class, 'index'])
+    ->name('ranking.index');
 
 Route::get('/favorites',
     [FavoriteController::class, 'index'])
     ->middleware('auth')
     ->name('favorites.index');
 
-Route::get('/genres', function () {
-    return 'ジャンル画面は未実装です';
-})->name('genres.index');
+Route::get('/genres',
+    [GenreController::class, 'index'])
+    ->middleware('auth')
+    ->name('genres.index');
+
+Route::get('/genres/create',
+    [GenreController::class, 'create'])
+    ->middleware('auth')
+    ->name('genres.create');
+
+Route::post('/genres',
+    [GenreController::class, 'store'])
+    ->middleware('auth')
+    ->name('genres.store');
+
+Route::get('/genres/{genre}',
+    [GenreController::class, 'show'])
+    ->middleware('auth')
+    ->name('genres.show');
+
+Route::get('/genres/{genre}/edit',
+    [GenreController::class, 'edit'])
+    ->middleware('auth')
+    ->name('genres.edit');
+
+Route::put('/genres/{genre}',
+    [GenreController::class, 'update'])
+    ->middleware('auth')
+    ->name('genres.update');
+
+Route::delete('/genres/{genre}',
+    [GenreController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('genres.destroy');
 
 Route::post('/books/{book}/favorites',
     [FavoriteController::class, 'toggle'])
