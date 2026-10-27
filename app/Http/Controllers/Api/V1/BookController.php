@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\BookResource;
 use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
@@ -19,8 +20,6 @@ class BookController extends Controller
      * 書籍一覧を検索条件に応じて取得する。
      *
      * キーワード検索、ジャンル絞り込み、ページネーションに対応する。
-     *
-     * @return AnonymousResourceCollection
      */
     public function index(BookIndexRequest $request): AnonymousResourceCollection
     {
@@ -60,8 +59,6 @@ class BookController extends Controller
      * 指定された書籍の詳細情報を取得する。
      *
      * 書籍に紐づくジャンルとレビュー、レビュー投稿者の情報を取得する。
-     *
-     * @return BookDetailResource
      */
     public function show(Book $book): BookDetailResource
     {
@@ -82,8 +79,6 @@ class BookController extends Controller
      *
      * バリデーション済みの書籍情報を保存し、指定されたジャンルを紐づける。
      * 登録した書籍情報をHTTP 201で返す。
-     *
-     * @return JsonResponse
      */
     public function store(StoreBookRequest $request): JsonResponse
     {
@@ -119,8 +114,6 @@ class BookController extends Controller
      * 指定されたジャンルとの紐づけを置き換える。
      * 登録者IDは変更せず、既存の値を維持する。
      * 更新後の書籍情報をHTTP 200で返す。
-     *
-     * @return JsonResponse
      */
     public function update(UpdateBookRequest $request, Book $book): JsonResponse
     {
@@ -150,5 +143,20 @@ class BookController extends Controller
 
         // 更新後の書籍情報を返す
         return (new BookResource($book))->response()->setStatusCode(200);
+    }
+
+    /**
+     * 指定された書籍を物理削除する。
+     *
+     * 書籍に紐づくレビュー、いいね、お気に入り、
+     * ジャンルとの関連付けを削除する。
+     * ジャンルマスタとユーザー情報は保持する。
+     */
+    public function destroy(Book $book): Response
+    {
+        // 書籍を物理削除（関連データは外部キー制約により自動削除）
+        $book->delete();
+
+        return response()->noContent();
     }
 }

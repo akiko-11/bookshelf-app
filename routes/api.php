@@ -20,3 +20,10 @@ Route::put('/v1/books/{book}', [BookController::class, 'update'])
             'message' => '指定された書籍が見つかりません。',
         ], 404);
     });
+
+Route::delete('/v1/books/{book}', [BookController::class, 'destroy'])
+    ->missing(function () {
+        return response()->json([
+            'message' => '指定された書籍が見つかりません。',
+        ], 404);
+    });
