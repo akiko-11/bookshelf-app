@@ -31,12 +31,15 @@
 - Docker Desktop
 - WSL2（Windowsの場合）
 
-Docker Desktopを起動してから、WSLのターミナルで以降のコマンドを実行します。
+Docker Desktopを起動してから、以降のコマンドを実行してください。
+
+- **Windowsの場合**：WSL2のターミナルで実行します。
+- **Macの場合**：ターミナルで実行します。
 
 ### 1. リポジトリをクローン
 
 ```bash
-git clone <GitHubリポジトリURL>
+git clone git@github.com:akiko-11/bookshelf-app.git
 cd bookshelf-app
 ```
 
@@ -196,7 +199,7 @@ platform: 'linux/amd64'
 | HTML | 画面構造 |
 | Tailwind CSS | 3.4.19 / スタイル設定 |
 | Alpine.js | 3.17.4 / フロントエンド |
-| PHP | 8.5.7 |
+| PHP | 8.5.12 |
 | Laravel | 10.50.3 |
 | MySQL | 8.4.10 |
 | Vite | フロントエンド開発環境 |
@@ -204,34 +207,204 @@ platform: 'linux/amd64'
 | Laravel Sail | Docker開発環境の操作 |
 | phpMyAdmin | データベース管理 |
 
-※ 詳細なバージョンは開発環境確定後に更新します。
-
 ---
+
+
 
 ## ER図
 
-テーブル設計完了後に追加します。
+BookShelfでは、書籍・ジャンル・レビュー・お気に入り・レビューへのいいね情報を、以下の7つの業務テーブルで管理しています。
 
 ```mermaid
 erDiagram
+    users {
+        bigint id PK
+        varchar name
+        varchar email UK
+        timestamp email_verified_at
+        varchar password
+        varchar remember_token
+        timestamp created_at
+        timestamp updated_at
+    }
 
+    genres {
+        bigint id PK
+        varchar name UK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    books {
+        bigint id PK
+        bigint user_id FK
+        varchar title
+        varchar author
+        varchar isbn UK
+        date published_date
+        text description
+        varchar image_url
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    book_genre {
+        bigint id PK
+        bigint book_id FK
+        bigint genre_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    reviews {
+        bigint id PK
+        bigint user_id FK
+        bigint book_id FK
+        tinyint rating
+        text comment
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    favorites {
+        bigint id PK
+        bigint user_id FK
+        bigint book_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    review_likes {
+        bigint id PK
+        bigint user_id FK
+        bigint review_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    users ||--o{ books : registers
+    users ||--o{ reviews : writes
+    users ||--o{ favorites : favorites
+    users ||--o{ review_likes : likes
+
+    books ||--o{ book_genre : has
+    genres ||--o{ book_genre : categorizes
+
+    books ||--o{ reviews : receives
+    books ||--o{ favorites : receives
+
+    reviews ||--o{ review_likes : receives
 ```
 
 ### 制約
 
-テーブル設計完了後に記載します。
+各業務テーブルには主キーとして `id` を設定し、Laravelの規約に従って `created_at` と `updated_at` を設けています。
+
+#### UNIQUE制約
+
+| テーブル | 対象カラム | 内容 |
+| --- | --- | --- |
+| users | email | メールアドレスの重複を禁止 |
+| genres | name | ジャンル名の重複を禁止 |
+| books | isbn | ISBNの重複を禁止 |
+| book_genre | book_id, genre_id | 同じ書籍とジャンルの組み合わせを禁止 |
+| reviews | user_id, book_id | 同じユーザーによる同一書籍への重複レビューを禁止 |
+| favorites | user_id, book_id | 同じユーザーによる同一書籍のお気に入り重複登録を禁止 |
+| review_likes | user_id, review_id | 同じユーザーによる同一レビューへの重複いいねを禁止 |
+
+複合UNIQUE制約は、複数カラムの組み合わせに対して設定しています。
+
+`reviews` テーブルの複合UNIQUE制約は、追加マイグレーション `2026_10_19_020253_add_unique_user_book_to_reviews_table.php` で定義しています。
+
+#### NOT NULL・NULL許可
+
+| テーブル | カラム | 制約 |
+| --- | --- | --- |
+| users | name, email, password | NOT NULL |
+| users | email_verified_at, remember_token | NULL許可 |
+| genres | name | NOT NULL |
+| books | user_id, title, author, isbn, published_date | NOT NULL |
+| books | description, image_url | NULL許可 |
+| book_genre | book_id, genre_id | NOT NULL |
+| reviews | user_id, book_id, rating, comment | NOT NULL |
+| favorites | user_id, book_id | NOT NULL |
+| review_likes | user_id, review_id | NOT NULL |
+
+#### その他の制約
+
+- `books.isbn`：13文字の文字列として保存
+- `reviews.rating`：符号なしTINYINT型で保存
+- レビューの評価は、アプリケーション側のバリデーションで1〜5に制限
+- レビューのコメントは、アプリケーション側のバリデーションで最大1000文字に制限
 
 ### リレーション
 
-テーブル設計完了後に記載します。
+| モデル | リレーション | 関係 |
+| --- | --- | --- |
+| User → Book | books() | 1対多 |
+| User → Review | reviews() | 1対多 |
+| User → Favorite | favorites() | 1対多 |
+| User → ReviewLike | reviewLikes() | 1対多 |
+| Book → Review | reviews() | 1対多 |
+| Book → Favorite | favorites() | 1対多 |
+| Book → Genre | genres() | 多対多 |
+| Genre → Book | books() | 多対多 |
+| Review → ReviewLike | reviewLikes() | 1対多 |
+| User → Book | favoriteBooks() | 多対多 |
+| User → Review | likedReviews() | 多対多 |
+
+多対多のリレーションには、以下の中間テーブルを使用しています。
+
+- `book_genre`：書籍とジャンル
+- `favorites`：ユーザーとお気に入り書籍
+- `review_likes`：ユーザーといいねしたレビュー
+
+いずれも `id` を主キーとし、関連する外部キーの組み合わせにUNIQUE制約を設定しています。
 
 ### 外部キー
 
-テーブル設計完了後に記載します。
+| テーブル | 外部キー | 参照先 | 削除時の動作 |
+| --- | --- | --- | --- |
+| books | user_id | users.id | CASCADE |
+| book_genre | book_id | books.id | CASCADE |
+| book_genre | genre_id | genres.id | RESTRICT |
+| reviews | user_id | users.id | CASCADE |
+| reviews | book_id | books.id | CASCADE |
+| favorites | user_id | users.id | CASCADE |
+| favorites | book_id | books.id | CASCADE |
+| review_likes | user_id | users.id | CASCADE |
+| review_likes | review_id | reviews.id | CASCADE |
+
+#### CASCADE
+
+親レコードを削除すると、関連する子レコードも自動的に削除されます。
+
+例：
+
+- 書籍削除時に、その書籍のレビュー・お気に入り・ジャンルとの関連付けを削除
+- レビュー削除時に、そのレビューへのいいね情報を削除
+- ユーザー削除時に、そのユーザーが登録した書籍・レビュー・お気に入り・いいね情報を削除
+
+#### RESTRICT
+
+参照されている親レコードの削除を制限します。
+
+`book_genre.genre_id` に設定しているため、書籍との関連付けが存在するジャンルは削除できません。
 
 ### 補助テーブルについて
 
-Laravel / Sanctum等が使用するフレームワーク用テーブルについては、業務テーブルとは分けて記載します。
+LaravelやFortifyなどのフレームワークが使用する以下の補助テーブルは、業務テーブルとは分けて管理しています。
+
+| テーブル | 用途 |
+| --- | --- |
+| password_reset_tokens | パスワードリセット用トークンの管理 |
+| failed_jobs | 失敗したキュージョブの記録 |
+| personal_access_tokens | APIトークンの管理 |
+| migrations | マイグレーションの実行履歴 |
+
+これらはアプリケーションの主要な業務データを管理するテーブルではないため、上記ER図には含めていません。
+
+Fortifyの二要素認証機能は基本要件の対象外として無効化しています。二要素認証用カラムはマイグレーションに定義されていますが、本ER図では省略しています。
 
 ---
 
@@ -255,7 +428,7 @@ Laravel / Sanctum等が使用するフレームワーク用テーブルについ
 
 ## ログイン情報
 
-Seeder実装後、以下の動作確認用ユーザーを利用できるようにします。
+Seederを実行すると、以下の動作確認用ユーザーが作成されます。
 
 | 名前 | メールアドレス | パスワード |
 | --- | --- | --- |
@@ -264,6 +437,42 @@ Seeder実装後、以下の動作確認用ユーザーを利用できるよう�
 | 田中一郎 | `tanaka@example.com` | `password` |
 | 佐藤美咲 | `sato@example.com` | `password` |
 | 高橋健太 | `takahashi@example.com` | `password` |
+
+---
+
+## テスト
+
+本プロジェクトでは、PHPUnitを使用してUnit TestとFeature Testを実装しています。
+
+### テスト実行
+
+すべてのテストを実行する場合：
+
+```bash
+./vendor/bin/sail artisan test
+```
+
+特定のテストディレクトリを実行する場合：
+
+```bash
+./vendor/bin/sail artisan test tests/Feature
+```
+
+### テストカバレッジ
+
+```bash
+./vendor/bin/sail artisan test --coverage
+```
+
+※ カバレッジ計測には、Xdebugなどのカバレッジドライバーを有効にする必要があります。
+
+### コードスタイルの確認
+
+Laravel Pintを使用してコードスタイルを確認します。
+
+```bash
+./vendor/bin/sail pint --test
+```
 
 ---
 
