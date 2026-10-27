@@ -4,6 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Models\Book;
 use App\Models\Review;
+use App\Models\ReviewLike;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -50,6 +51,26 @@ class ReviewTest extends TestCase
         $likedUsers = $review->likedByUsers;
 
         $this->assertTrue($likedUsers->contains($likedUser));
+    }
+
+    // レビューに紐づくいいね情報を取得できる
+    public function test_review_has_many_review_likes(): void
+    {
+        $user = $this->createUser();
+        $book = $this->createBook($user);
+        $review = $this->createReview($user, $book);
+
+        $likedUser = User::factory()->create();
+
+        $reviewLike = ReviewLike::create([
+            'user_id' => $likedUser->id,
+            'review_id' => $review->id,
+        ]);
+
+        $reviewLikes = $review->reviewLikes;
+
+        $this->assertCount(1, $reviewLikes);
+        $this->assertTrue($reviewLikes->contains($reviewLike));
     }
 
     // ユーザー作成

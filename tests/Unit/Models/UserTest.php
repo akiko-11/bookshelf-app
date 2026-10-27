@@ -3,7 +3,9 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Book;
+use App\Models\Favorite;
 use App\Models\Review;
+use App\Models\ReviewLike;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,6 +63,39 @@ class UserTest extends TestCase
         $likedReviews = $user->likedReviews;
 
         $this->assertTrue($likedReviews->contains($review));
+    }
+
+    // ユーザーのお気に入り情報を取得できる
+    public function test_user_has_many_favorites(): void
+    {
+        $user = $this->createUser();
+        $book = $this->createBook($user);
+
+        $favorite = Favorite::create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+
+        $favorites = $user->favorites;
+
+        $this->assertTrue($favorites->contains($favorite));
+    }
+
+    // ユーザーが登録したレビューのいいね情報を取得できる
+    public function test_user_has_many_review_likes(): void
+    {
+        $user = $this->createUser();
+        $book = $this->createBook($user);
+        $review = $this->createReview($user, $book);
+
+        $reviewLike = ReviewLike::create([
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+
+        $reviewLikes = $user->reviewLikes;
+
+        $this->assertTrue($reviewLikes->contains($reviewLike));
     }
 
     // ユーザー作成
