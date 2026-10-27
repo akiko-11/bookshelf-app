@@ -11,3 +11,5 @@ Route::get('/v1/books/{book}', [BookController::class, 'show'])
             'message' => '指定された書籍が見つかりません。',
         ], 404);
     });
+
+Route::post('/v1/books', [BookController::class, 'store']);
