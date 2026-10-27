@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\BookIndexRequest;
 use App\Http\Requests\Api\StoreBookRequest;
+use App\Http\Requests\Api\UpdateBookRequest;
 use App\Http\Resources\Api\V1\BookDetailResource;
 use App\Http\Resources\Api\V1\BookResource;
 use App\Models\Book;
@@ -21,7 +22,7 @@ class BookController extends Controller
      *
      * @return AnonymousResourceCollection
      */
-    public function index(BookIndexRequest $request)
+    public function index(BookIndexRequest $request): AnonymousResourceCollection
     {
         $validated = $request->validated();
 
@@ -62,7 +63,7 @@ class BookController extends Controller
      *
      * @return BookDetailResource
      */
-    public function show(Book $book)
+    public function show(Book $book): BookDetailResource
     {
         // 書籍に関するジャンル・レビュー・投稿者を取得
         $book->load([
@@ -84,7 +85,7 @@ class BookController extends Controller
      *
      * @return JsonResponse
      */
-    public function store(StoreBookRequest $request)
+    public function store(StoreBookRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
@@ -109,5 +110,45 @@ class BookController extends Controller
             ->loadAvg('reviews', 'rating');
 
         return (new BookResource($book))->response()->setStatusCode(201);
+    }
+
+    /**
+     * 指定された書籍情報を更新する。
+     *
+     * バリデーション済みの書籍情報を更新し、
+     * 指定されたジャンルとの紐づけを置き換える。
+     * 登録者IDは変更せず、既存の値を維持する。
+     * 更新後の書籍情報をHTTP 200で返す。
+     *
+     * @return JsonResponse
+     */
+    public function update(UpdateBookRequest $request, Book $book): JsonResponse
+    {
+        $validated = $request->validated();
+
+        // ジャンルIDを別に保存
+        $genreIds = $validated['genres'] ?? null;
+
+        // 書籍テーブルの更新対象から除外
+        unset($validated['genres'], $validated['user_id']);
+
+        // 書籍更新とジャンルの紐づけを一括で実行
+        $book = DB::transaction(function () use ($book, $validated, $genreIds) {
+            $book->update($validated);
+
+            if ($genreIds !== null) {
+                $book->genres()->sync($genreIds);
+            }
+
+            return $book;
+        });
+
+        // レスポンスに必要な関連情報を取得
+        $book->load('genres')
+            ->loadCount('reviews')
+            ->loadAvg('reviews', 'rating');
+
+        // 更新後の書籍情報を返す
+        return (new BookResource($book))->response()->setStatusCode(200);
     }
 }
