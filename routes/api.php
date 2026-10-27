@@ -13,3 +13,10 @@ Route::get('/v1/books/{book}', [BookController::class, 'show'])
     });
 
 Route::post('/v1/books', [BookController::class, 'store']);
+
+Route::put('/v1/books/{book}', [BookController::class, 'update'])
+    ->missing(function () {
+        return response()->json([
+            'message' => '指定された書籍が見つかりません。',
+        ], 404);
+    });
