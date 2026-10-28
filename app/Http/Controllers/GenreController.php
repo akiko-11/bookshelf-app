@@ -12,6 +12,8 @@ class GenreController extends Controller
 {
     /**
      * ジャンル一覧を表示する。
+     *
+     * @return View ジャンル一覧画面
      */
     public function index(): View
     {
@@ -31,6 +33,7 @@ class GenreController extends Controller
     public function show(Genre $genre): View
     {
         $books = $genre->books()
+            ->with('genres')
             ->paginate(10);
 
         return view('genres.show', [

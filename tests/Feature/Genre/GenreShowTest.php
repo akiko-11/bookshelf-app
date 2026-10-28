@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Models\Genre;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class GenreShowTest extends TestCase
@@ -159,5 +160,33 @@ class GenreShowTest extends TestCase
             'href="'.route('genres.show', $genre).'"',
             false
         );
+    }
+
+    // ジャンル詳細画面で関連ジャンルのN+1問題が発生しない
+    public function test_genre_detail_loads_book_genres_without_n_plus_one(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::factory()->create();
+        $books = Book::factory()->count(5)->create();
+
+        $genre->books()->attach($books->pluck('id'));
+
+        $queries = [];
+
+        DB::listen(function ($query) use (&$queries) {
+            $queries[] = $query->sql;
+        });
+
+        $response = $this->actingAs($user)
+            ->get(route('genres.show', $genre));
+
+        $response->assertStatus(200);
+
+        $genreQueries = array_filter($queries, function (string $sql): bool {
+            return str_contains($sql, 'genres')
+                && str_contains($sql, 'book_genre');
+        });
+
+        $this->assertCount(1, $genreQueries);
     }
 }
