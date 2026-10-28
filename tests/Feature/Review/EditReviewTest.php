@@ -32,6 +32,20 @@ class EditReviewTest extends TestCase
         $response->assertStatus(200);
 
         $response->assertSee('とても良い本でした。');
+
+        $html = $response->getContent();
+
+        // 評価5が選択済みであること
+        $this->assertMatchesRegularExpression(
+            '/<input\b(?=[^>]*name="rating")(?=[^>]*value="5")(?=[^>]*\bchecked\b)[^>]*>/',
+            $html
+        );
+
+        // 評価1〜4が選択されていないこと
+        $this->assertDoesNotMatchRegularExpression(
+            '/<input\b(?=[^>]*name="rating")(?=[^>]*value="[1-4]")(?=[^>]*\bchecked\b)[^>]*>/',
+            $html
+        );
     }
 
     // 他ユーザーはレビュー編集画面を表示できない

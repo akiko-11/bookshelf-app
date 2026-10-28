@@ -84,4 +84,36 @@ class GenreIndexTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('ジャンルが登録されていません。');
     }
+
+    // ジャンルが作成日時の新しい順に表示される
+    public function test_genres_are_ordered_by_created_at_desc(): void
+    {
+        $user = User::factory()->create();
+
+        $newest = Genre::create(['name' => '新しいジャンル']);
+        $oldest = Genre::create(['name' => '古いジャンル']);
+        $middle = Genre::create(['name' => '中間ジャンル']);
+
+        $newest->forceFill([
+            'created_at' => now(),
+        ])->save();
+
+        $oldest->forceFill([
+            'created_at' => now()->subDays(2),
+        ])->save();
+
+        $middle->forceFill([
+            'created_at' => now()->subDay(),
+        ])->save();
+
+        $response = $this->actingAs($user)
+            ->get(route('genres.index'));
+
+        $response->assertOk();
+
+        $this->assertSame(
+            [$newest->id, $middle->id, $oldest->id],
+            $response->viewData('genres')->pluck('id')->all()
+        );
+    }
 }

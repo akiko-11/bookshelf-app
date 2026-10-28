@@ -179,6 +179,17 @@ class RegistrationTest extends TestCase
         $this->assertAuthenticated();
     }
 
+    // 認証済みユーザーは会員登録画面にアクセスできない
+    public function test_authenticated_user_cannot_view_registration_page(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/register');
+
+        $response->assertRedirect('/');
+        $this->assertAuthenticatedAs($user);
+    }
+
     // 有効な登録データを保持する
     private function validRegistrationData(array $overrides = []): array
     {

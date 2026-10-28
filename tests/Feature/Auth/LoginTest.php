@@ -95,4 +95,15 @@ class LoginTest extends TestCase
             'password' => Hash::make('password'),
         ]);
     }
+
+    // 認証済みユーザーはログイン画面にアクセスできない
+    public function test_authenticated_user_cannot_view_login_page(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/login');
+
+        $response->assertRedirect('/');
+        $this->assertAuthenticatedAs($user);
+    }
 }

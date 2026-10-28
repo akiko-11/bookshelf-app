@@ -301,4 +301,29 @@ class BookBackNavigationTest extends TestCase
             false
         );
     }
+
+    // 書籍一覧の2ページ目から詳細へ遷移元情報を渡せる
+    public function test_books_list_passes_origin_and_page_to_book_detail(): void
+    {
+        Book::factory()->count(11)->create();
+
+        $response = $this->get(
+            route('books.index', ['page' => 2])
+        );
+
+        $response->assertOk();
+
+        // 2ページ目に表示されている書籍を取得
+        $book = $response->viewData('books')->items()[0];
+
+        // 書籍詳細へのリンクにアクセス元とページ番号が含まれること
+        $response->assertSee(
+            'href="'.e(route('books.show', [
+                'book' => $book,
+                'from' => 'books',
+                'page' => 2,
+            ])).'"',
+            false
+        );
+    }
 }
