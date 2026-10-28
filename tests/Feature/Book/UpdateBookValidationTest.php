@@ -436,11 +436,14 @@ class UpdateBookValidationTest extends TestCase
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
+            'title' => '更新前タイトル',
         ]);
 
         $genre = Genre::create([
             'name' => 'テストジャンル',
         ]);
+
+        $book->genres()->attach($genre->id);
 
         $data = $this->validBookData($genre->id);
 
@@ -455,9 +458,17 @@ class UpdateBookValidationTest extends TestCase
             'genres' => 'ジャンルは1つ以上選択してください',
         ]);
 
+        // 書籍タイトルが更新前のまま
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
+            'title' => '更新前タイトル',
         ]);
+
+        // ジャンルの関連付けも更新前のまま
+        $this->assertSame(
+            [$genre->id],
+            $book->fresh()->genres()->pluck('genres.id')->all()
+        );
     }
 
     // 存在しないジャンルIDでは更新できない
@@ -467,7 +478,14 @@ class UpdateBookValidationTest extends TestCase
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
+            'title' => '更新前タイトル',
         ]);
+
+        $oldGenre = Genre::create([
+            'name' => '更新前ジャンル',
+        ]);
+
+        $book->genres()->attach($oldGenre->id);
 
         $data = $this->validBookData(99999);
 
@@ -482,7 +500,13 @@ class UpdateBookValidationTest extends TestCase
 
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
+            'title' => '更新前タイトル',
         ]);
+
+        $this->assertSame(
+            [$oldGenre->id],
+            $book->fresh()->genres()->pluck('genres.id')->all()
+        );
     }
 
     // 同じジャンルを重複指定した場合は更新できない
@@ -492,11 +516,18 @@ class UpdateBookValidationTest extends TestCase
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
+            'title' => '更新前タイトル',
         ]);
 
         $genre = Genre::create([
             'name' => 'テストジャンル',
         ]);
+
+        $oldGenre = Genre::create([
+            'name' => '更新前ジャンル',
+        ]);
+
+        $book->genres()->attach($oldGenre->id);
 
         $data = $this->validBookData($genre->id, [
             'genres' => [$genre->id, $genre->id],
@@ -511,9 +542,17 @@ class UpdateBookValidationTest extends TestCase
             'genres.0' => '同じジャンルを重複して選択することはできません',
         ]);
 
+        // 書籍情報が変更されていない
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
+            'title' => '更新前タイトル',
         ]);
+
+        // ジャンルの関連付けも変更されていない
+        $this->assertSame(
+            [$oldGenre->id],
+            $book->fresh()->genres()->pluck('genres.id')->all()
+        );
     }
 
     // バリデーションエラー時に入力内容が保持される
