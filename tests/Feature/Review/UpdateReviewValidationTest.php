@@ -21,6 +21,8 @@ class UpdateReviewValidationTest extends TestCase
         $review = Review::factory()->create([
             'user_id' => $user->id,
             'book_id' => $book->id,
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
 
         $response = $this->actingAs($user)->put(
@@ -34,9 +36,11 @@ class UpdateReviewValidationTest extends TestCase
             'rating' => '評価を選択してください',
         ]);
 
-        $this->assertDatabaseMissing('reviews', [
+        // バリデーションエラー後も元のレビュー内容が保持される
+        $this->assertDatabaseHas('reviews', [
             'id' => $review->id,
-            'comment' => '更新しました。',
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
     }
 
@@ -49,6 +53,8 @@ class UpdateReviewValidationTest extends TestCase
         $review = Review::factory()->create([
             'user_id' => $user->id,
             'book_id' => $book->id,
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
 
         $response = $this->actingAs($user)->put(
@@ -63,9 +69,10 @@ class UpdateReviewValidationTest extends TestCase
             'rating' => '評価は1から5の整数を選択してください',
         ]);
 
-        $this->assertDatabaseMissing('reviews', [
+        $this->assertDatabaseHas('reviews', [
             'id' => $review->id,
-            'comment' => '更新しました。',
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
     }
 
@@ -78,6 +85,8 @@ class UpdateReviewValidationTest extends TestCase
         $review = Review::factory()->create([
             'user_id' => $user->id,
             'book_id' => $book->id,
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
 
         $response = $this->actingAs($user)->put(
@@ -92,9 +101,10 @@ class UpdateReviewValidationTest extends TestCase
             'rating' => '評価は1から5の範囲で選択してください',
         ]);
 
-        $this->assertDatabaseMissing('reviews', [
+        $this->assertDatabaseHas('reviews', [
             'id' => $review->id,
-            'comment' => '更新しました。',
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
     }
 
@@ -163,6 +173,8 @@ class UpdateReviewValidationTest extends TestCase
         $review = Review::factory()->create([
             'user_id' => $user->id,
             'book_id' => $book->id,
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
 
         $response = $this->actingAs($user)->put(
@@ -177,9 +189,10 @@ class UpdateReviewValidationTest extends TestCase
             'rating' => '評価は1から5の範囲で選択してください',
         ]);
 
-        $this->assertDatabaseMissing('reviews', [
+        $this->assertDatabaseHas('reviews', [
             'id' => $review->id,
-            'comment' => '更新しました。',
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
     }
 
@@ -283,6 +296,8 @@ class UpdateReviewValidationTest extends TestCase
         $review = Review::factory()->create([
             'user_id' => $user->id,
             'book_id' => $book->id,
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
 
         $comment = str_repeat('あ', 1001);
@@ -299,9 +314,11 @@ class UpdateReviewValidationTest extends TestCase
             'comment' => 'コメントは1000文字以内で入力してください',
         ]);
 
-        $this->assertDatabaseMissing('reviews', [
+        // バリデーションエラー後も元のレビュー内容が保持される
+        $this->assertDatabaseHas('reviews', [
             'id' => $review->id,
-            'comment' => $comment,
+            'rating' => 5,
+            'comment' => '更新前コメント',
         ]);
     }
 }
