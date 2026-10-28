@@ -35,6 +35,7 @@ class EditBookTest extends TestCase
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
+            'image_url' => 'https://example.com/book-cover.jpg',
         ]);
 
         $response = $this->actingAs($user)->get(
@@ -46,7 +47,10 @@ class EditBookTest extends TestCase
         $response->assertSee($book->isbn);
         $response->assertSee($book->published_date->format('Y-m-d'));
         $response->assertSee($book->description);
-        $response->assertSee($book->image_url);
+        $response->assertSee(
+            'name="image_url" id="image_url" value="'.e($book->image_url).'"',
+            false
+        );
     }
 
     // 現在紐付いているジャンルが選択済みで表示される
@@ -62,6 +66,10 @@ class EditBookTest extends TestCase
             'name' => 'テストジャンル',
         ]);
 
+        $otherGenre = Genre::create([
+            'name' => '未選択ジャンル',
+        ]);
+
         $book->genres()->attach($genre->id);
 
         $response = $this->actingAs($user)->get(
@@ -71,7 +79,19 @@ class EditBookTest extends TestCase
         $response->assertStatus(200);
 
         $response->assertSee('テストジャンル');
-        $response->assertSee('checked', false);
+        $html = $response->getContent();
+
+        // 登録済みジャンルはチェックされる
+        $this->assertMatchesRegularExpression(
+            '/<input\b[^>]*name="genres\[\]"[^>]*value="'.$genre->id.'"[^>]*\schecked(?:\s|>)/',
+            $html
+        );
+
+        // 未登録ジャンルはチェックされない
+        $this->assertDoesNotMatchRegularExpression(
+            '/<input\b[^>]*name="genres\[\]"[^>]*value="'.$otherGenre->id.'"[^>]*\schecked(?:\s|>)/',
+            $html
+        );
     }
 
     // 他ユーザーは書籍編集画面を表示できない

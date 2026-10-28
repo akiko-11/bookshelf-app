@@ -52,4 +52,29 @@ class BookIndexTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('テストジャンル');
     }
+
+    // 書籍が作成日時の新しい順に表示される
+    public function test_books_are_ordered_by_created_at_desc(): void
+    {
+        $newest = Book::factory()->create([
+            'created_at' => now(),
+        ]);
+
+        $oldest = Book::factory()->create([
+            'created_at' => now()->subDays(2),
+        ]);
+
+        $middle = Book::factory()->create([
+            'created_at' => now()->subDay(),
+        ]);
+
+        $response = $this->get(route('books.index'));
+
+        $response->assertOk();
+
+        $this->assertSame(
+            [$newest->id, $middle->id, $oldest->id],
+            $response->viewData('books')->pluck('id')->all()
+        );
+    }
 }
