@@ -108,7 +108,11 @@ class UpdateBookTest extends TestCase
             'name' => 'テストジャンル',
         ]);
 
+        $book->genres()->attach($genre->id);
+
         $data = $this->validBookData($genre->id);
+
+        $original = $book->fresh()->getAttributes();
 
         $response = $this->actingAs($otherUser)->put(
             route('books.update', $book),
@@ -117,14 +121,11 @@ class UpdateBookTest extends TestCase
 
         $response->assertForbidden();
 
-        $this->assertDatabaseMissing('books', [
-            'id' => $book->id,
-            'title' => '更新後のタイトル',
-            'author' => '更新後の著者',
-            'isbn' => '9784000000000',
-            'published_date' => '2026-10-12',
-            'description' => '更新後の説明です。',
-            'image_url' => 'https://example.com/image.jpg',
+        $this->assertSame($original, $book->fresh()->getAttributes());
+
+        $this->assertDatabaseHas('book_genre', [
+            'book_id' => $book->id,
+            'genre_id' => $genre->id,
         ]);
     }
 
@@ -141,7 +142,11 @@ class UpdateBookTest extends TestCase
             'name' => 'テストジャンル',
         ]);
 
+        $book->genres()->attach($genre->id);
+
         $data = $this->validBookData($genre->id);
+
+        $original = $book->fresh()->getAttributes();
 
         $response = $this->put(
             route('books.update', $book),
@@ -150,14 +155,47 @@ class UpdateBookTest extends TestCase
 
         $response->assertRedirect(route('login'));
 
-        $this->assertDatabaseMissing('books', [
-            'id' => $book->id,
-            'title' => '更新後のタイトル',
-            'author' => '更新後の著者',
-            'isbn' => '9784000000000',
-            'published_date' => '2026-10-12',
-            'description' => '更新後の説明です。',
-            'image_url' => 'https://example.com/image.jpg',
+        $this->assertSame($original, $book->fresh()->getAttributes());
+
+        $this->assertDatabaseHas('book_genre', [
+            'book_id' => $book->id,
+            'genre_id' => $genre->id,
+        ]);
+    }
+
+    // 他ユーザーが不正な入力で書籍を更新しようとしても403になる
+    public function test_other_user_cannot_update_book_with_invalid_data(): void
+    {
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        $book = Book::factory()->create([
+            'user_id' => $owner->id,
+        ]);
+
+        $genre = Genre::create([
+            'name' => 'テストジャンル',
+        ]);
+
+        $book->genres()->attach($genre->id);
+
+        $data = $this->validBookData($genre->id);
+        $data['title'] = '';
+
+        $original = $book->fresh()->getAttributes();
+
+        $response = $this->actingAs($otherUser)->put(
+            route('books.update', $book),
+            $data
+        );
+
+        $response->assertForbidden();
+
+        $this->assertSame($original, $book->fresh()->getAttributes());
+
+        $this->assertDatabaseHas('book_genre', [
+            'book_id' => $book->id,
+            'genre_id' => $genre->id,
         ]);
     }
 
