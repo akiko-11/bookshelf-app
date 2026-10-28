@@ -358,6 +358,35 @@ class BookStoreValidationTest extends TestCase
         $this->assertDatabaseCount('books', 0);
     }
 
+    // 不正なジャンル形式で登録に失敗しても、フォームを再表示できる
+    public function test_create_form_can_be_redisplayed_after_invalid_genres_input(): void
+    {
+        $user = User::factory()->create();
+
+        $genre = Genre::create([
+            'name' => 'テストジャンル',
+        ]);
+
+        $data = $this->validBookData($genre->id, [
+            'genres' => 'invalid',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->from(route('books.create'))
+            ->post(route('books.store'), $data);
+
+        $response->assertRedirect(route('books.create'));
+
+        $response->assertSessionHasErrors([
+            'genres' => 'ジャンルの形式が正しくありません',
+        ]);
+
+        $response = $this->get(route('books.create'));
+
+        $response->assertOk();
+        $response->assertSee('ジャンルの形式が正しくありません');
+    }
+
     // 正常な書籍登録データを返す
     private function validBookData(int $genreId, array $overrides = []): array
     {

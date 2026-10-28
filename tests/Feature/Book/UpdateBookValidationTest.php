@@ -549,6 +549,39 @@ class UpdateBookValidationTest extends TestCase
         );
     }
 
+    // 不正なジャンル形式で更新に失敗しても、フォームを再表示できる
+    public function test_edit_form_can_be_redisplayed_after_invalid_genres_input(): void
+    {
+        $user = User::factory()->create();
+
+        $book = Book::factory()->create([
+            'user_id' => $user->id,
+        ]);
+
+        $genre = Genre::create([
+            'name' => 'テストジャンル',
+        ]);
+
+        $data = $this->validBookData($genre->id, [
+            'genres' => 'invalid',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->from(route('books.edit', $book))
+            ->put(route('books.update', $book), $data);
+
+        $response->assertRedirect(route('books.edit', $book));
+
+        $response->assertSessionHasErrors([
+            'genres' => 'ジャンルの形式が正しくありません',
+        ]);
+
+        $response = $this->get(route('books.edit', $book));
+
+        $response->assertOk();
+        $response->assertSee('ジャンルの形式が正しくありません');
+    }
+
     // 正常な書籍更新データを返す
     private function validBookData(int $genreId, array $overrides = []): array
     {
