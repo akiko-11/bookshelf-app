@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreBookRequest extends FormRequest
@@ -12,6 +13,24 @@ class StoreBookRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * バリデーション失敗時に、不正なジャンル入力を正規化する。
+     *
+     * フォーム再表示時にold('genres')へ文字列が渡されると
+     * Bladeのin_array()でTypeErrorが発生するため、
+     * 配列以外の入力値を空配列に置き換える。
+     *
+     * @param  Validator  $validator  バリデーション結果
+     */
+    protected function failedValidation(Validator $validator): void
+    {
+        if (! is_array($this->input('genres'))) {
+            request()->merge(['genres' => []]);
+        }
+
+        parent::failedValidation($validator);
     }
 
     /**
