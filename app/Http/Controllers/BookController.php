@@ -23,9 +23,13 @@ class BookController extends Controller
     {
         $keyword = $request->validated('keyword');
         $genre = $request->validated('genre');
+        $sort = $request->validated('sort') ?: 'newest';
+
+        $direction = $sort === 'oldest' ? 'asc' : 'desc';
 
         // キーワード検索
         $books = Book::with('genres')
+            ->withAvg('reviews', 'rating')
             ->when($keyword !== null && $keyword !== '', function ($query) use ($keyword) {
                 $query->where(function ($subQuery) use ($keyword) {
                     $subQuery->where('title', 'like', "%{$keyword}%")
@@ -37,7 +41,18 @@ class BookController extends Controller
                     $subQuery->where('genres.id', $genre);
                 });
             })
-            ->latest()
+            ->when(in_array($sort, ['newest', 'oldest'], true), function ($query) use ($direction) {
+                $query->orderBy('created_at', $direction)
+                    ->orderBy('books.id');
+            })
+            ->when($sort === 'title', function ($query) {
+                $query->orderBy('title', 'asc')
+                    ->orderBy('books.id');
+            })
+            ->when($sort === 'rating', function ($query) {
+                $query->orderByDesc('reviews_avg_rating')
+                    ->orderBy('books.id');
+            })
             ->paginate(10);
 
         // ジャンル一覧を取得

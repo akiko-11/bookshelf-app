@@ -63,6 +63,12 @@
                                     <option value="rating" {{ request('sort') == 'rating' ? 'selected' : '' }}>評価順</option>
                                     <option value="title" {{ request('sort') == 'title' ? 'selected' : '' }}>タイトル順</option>
                                 </select>
+
+                                @error('sort')
+                                    <p class="text-sm text-red-600 mt-1">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
                             </div>
                         </div>
                         <div class="flex items-center justify-between">
