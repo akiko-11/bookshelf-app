@@ -16,13 +16,15 @@ class BookController extends Controller
     /**
      * 書籍一覧画面を表示する。
      *
-     * @param  BookSearchRequest  $request  バリデーション済みのキーワードリクエスト
+     * @param  BookSearchRequest  $request  バリデーション済みの書籍検索リクエスト
      * @return View 書籍一覧画面
      */
     public function index(BookSearchRequest $request): View
     {
         $keyword = $request->validated('keyword');
+        $genre = $request->validated('genre');
 
+        // キーワード検索
         $books = Book::with('genres')
             ->when($keyword !== null && $keyword !== '', function ($query) use ($keyword) {
                 $query->where(function ($subQuery) use ($keyword) {
@@ -30,10 +32,21 @@ class BookController extends Controller
                         ->orWhere('author', 'like', "%{$keyword}%");
                 });
             })
+            ->when($genre !== null && $genre !== '', function ($query) use ($genre) {
+                $query->whereHas('genres', function ($subQuery) use ($genre) {
+                    $subQuery->where('genres.id', $genre);
+                });
+            })
             ->latest()
             ->paginate(10);
 
-        return view('books.index', ['books' => $books]);
+        // ジャンル一覧を取得
+        $genres = Genre::all();
+
+        return view('books.index', [
+            'books' => $books,
+            'genres' => $genres,
+        ]);
     }
 
     /**
