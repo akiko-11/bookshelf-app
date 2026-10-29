@@ -48,6 +48,12 @@
                                         </option>
                                     @endforeach
                                 </select>
+
+                                @error('genre')
+                                    <p class="text-sm text-red-600 mt-1">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
                             </div>
                             <div>
                                 <label for="sort" class="block text-sm font-medium text-gray-700 mb-1">並び順</label>

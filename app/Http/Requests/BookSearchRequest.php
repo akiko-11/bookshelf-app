@@ -21,6 +21,7 @@ class BookSearchRequest extends FormRequest
     {
         return [
             'keyword' => 'nullable|string|max:255',
+            'genre' => 'nullable|integer|exists:genres,id',
         ];
     }
 
@@ -29,6 +30,9 @@ class BookSearchRequest extends FormRequest
         return [
             'keyword.string' => 'キーワードは文字列で入力してください',
             'keyword.max' => 'キーワードは255文字以内で入力してください',
+
+            'genre.integer' => 'ジャンルIDは整数で指定してください',
+            'genre.exists' => '指定されたジャンルが存在しません',
         ];
     }
 }
