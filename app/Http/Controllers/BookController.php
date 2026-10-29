@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BookSearchRequest;
 use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
@@ -15,11 +16,20 @@ class BookController extends Controller
     /**
      * 書籍一覧画面を表示する。
      *
+     * @param  BookSearchRequest  $request  バリデーション済みのキーワードリクエスト
      * @return View 書籍一覧画面
      */
-    public function index(): View
+    public function index(BookSearchRequest $request): View
     {
+        $keyword = $request->validated('keyword');
+
         $books = Book::with('genres')
+            ->when($keyword !== null && $keyword !== '', function ($query) use ($keyword) {
+                $query->where(function ($subQuery) use ($keyword) {
+                    $subQuery->where('title', 'like', "%{$keyword}%")
+                        ->orWhere('author', 'like', "%{$keyword}%");
+                });
+            })
             ->latest()
             ->paginate(10);
 
