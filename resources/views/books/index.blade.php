@@ -96,6 +96,13 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
+                    
+                    @error('page')
+                        <p class="text-sm text-red-600 mt-1 mb-4">
+                            {{ $message }}
+                        </p>
+                    @enderror
+
                     @if($books->isEmpty())
                         <p class="text-gray-500">書籍が見つかりませんでした。</p>
                     @else
@@ -104,8 +111,11 @@
                                 <a href="{{ route('books.show', [
                                     'book' => $book,
                                     'from' => 'books',
-                                    'page' => request()->query('page', 1)
-                                ]) }}" class="block border rounded-lg p-4 shadow hover:shadow-lg transition cursor-pointer">
+                                    'page' => request()->query('page', 1),
+                                    'keyword' => request()->query('keyword'),
+                                    'genre' => request()->query('genre'),
+                                    'sort' => request()->query('sort'),
+                                ]) }}"class="block border rounded-lg p-4 shadow hover:shadow-lg transition cursor-pointer">
                                     @if($book->image_url)
                                         <img src="{{ $book->image_url }}" alt="{{ $book->title }}" class="w-full h-48 object-cover mb-4 rounded">
                                     @else
@@ -143,7 +153,7 @@
                         </div>
 
                         <div class="mt-6">
-                            {{ $books->links() }}
+                            {{ $books->withQueryString()->links() }}
                         </div>
                     @endif
                 </div>

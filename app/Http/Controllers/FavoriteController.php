@@ -46,12 +46,20 @@ class FavoriteController extends Controller
                 'page' => 1,
             ];
         } elseif ($from === 'books') {
-            // 書籍一覧から来た場合、元のページ番号を保持
             $params = [
                 'book' => $book,
                 'from' => 'books',
                 'page' => $page,
             ];
+
+            foreach (['keyword', 'genre', 'sort'] as $key) {
+                $value = request()->input($key);
+
+                // 文字列の確認、空文字列は引き継がない
+                if (is_string($value) && $value !== '') {
+                    $params[$key] = $value;
+                }
+            }
         } elseif ($from === 'genre' && request()->filled('genre_id')) {
             // ジャンル詳細から来た場合、ジャンルIDとページ番号を保持
             $params = [

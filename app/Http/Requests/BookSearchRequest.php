@@ -23,6 +23,7 @@ class BookSearchRequest extends FormRequest
             'keyword' => 'nullable|string|max:255',
             'genre' => 'nullable|integer|exists:genres,id',
             'sort' => 'nullable|in:newest,oldest,title,rating',
+            'page' => 'nullable|integer|min:1',
         ];
     }
 
@@ -36,6 +37,9 @@ class BookSearchRequest extends FormRequest
             'genre.exists' => '指定されたジャンルが存在しません',
 
             'sort.in' => '指定された並び順は無効です',
+
+            'page.integer' => 'ページ番号は整数で指定してください',
+            'page.min' => 'ページ番号は1以上で指定してください',
         ];
     }
 }

@@ -37,6 +37,9 @@
                                             <input type="hidden" name="from" value="{{ request()->query('from', 'books') }}">
                                             <input type="hidden" name="page" value="{{ request()->query('page', 1) }}">
                                             <input type="hidden" name="genre_id" value="{{ request()->query('genre_id') }}">
+                                            <input type="hidden" name="keyword" value="{{ request()->query('keyword') }}">
+                                            <input type="hidden" name="genre" value="{{ request()->query('genre') }}">
+                                            <input type="hidden" name="sort" value="{{ request()->query('sort') }}">
 
                                             <button type="submit" class="text-red-500 hover:text-red-700" title="お気に入りから削除">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
@@ -51,6 +54,10 @@
                                             <input type="hidden" name="from" value="{{ request()->query('from', 'books') }}">
                                             <input type="hidden" name="page" value="{{ request()->query('page', 1) }}">
                                             <input type="hidden" name="genre_id" value="{{ request()->query('genre_id') }}">
+
+                                            <input type="hidden" name="keyword" value="{{ request()->query('keyword') }}">
+                                            <input type="hidden" name="genre" value="{{ request()->query('genre') }}">
+                                            <input type="hidden" name="sort" value="{{ request()->query('sort') }}">
 
                                             <button type="submit" class="text-gray-400 hover:text-red-500" title="お気に入りに追加">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -276,9 +283,18 @@
                         'page' => $page,
                     ]);
                 } else {
-                    $backUrl = route('books.index', [
+                    $params = [
                         'page' => $from === 'books' ? $page : 1,
-                    ]);
+                    ];
+
+                    if ($from === 'books') {
+                        $params = array_merge(
+                            $params,
+                            request()->only(['keyword', 'genre', 'sort'])
+                        );
+                    }
+
+                    $backUrl = route('books.index', $params);
                 }
             @endphp
             <div class="mt-4">
