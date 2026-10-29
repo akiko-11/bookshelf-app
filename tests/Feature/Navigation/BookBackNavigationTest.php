@@ -326,4 +326,132 @@ class BookBackNavigationTest extends TestCase
             false
         );
     }
+
+    // 検索条件付きの書籍一覧から詳細画面へ遷移し、元の検索結果に戻れる
+    public function test_book_detail_preserves_search_conditions_when_returning_to_list(): void
+    {
+        $book = Book::factory()->create();
+
+        $response = $this->get(route('books.show', [
+            'book' => $book,
+            'from' => 'books',
+            'page' => 2,
+            'keyword' => 'Laravel',
+            'sort' => 'oldest',
+        ]));
+
+        $response->assertStatus(200);
+
+        $response->assertSee(
+            'href="'.e(route('books.index', [
+                'page' => 2,
+                'keyword' => 'Laravel',
+                'sort' => 'oldest',
+            ])).'"',
+            false
+        );
+    }
+
+    // お気に入り追加後も検索条件とページ番号が保持される
+    public function test_adding_favorite_preserves_search_conditions(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        // 書籍一覧の2ページ目からお気に入りを追加
+        $response = $this->actingAs($user)
+            ->post(route('favorites.toggle', $book), [
+                'from' => 'books',
+                'page' => 2,
+                'keyword' => 'Laravel',
+                'sort' => 'oldest',
+            ]);
+
+        // お気に入りに登録されたことを確認
+        $this->assertDatabaseHas('favorites', [
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+
+        // アクセス元情報を保持して書籍詳細画面へ戻ること
+        $response->assertRedirect(route('books.show', [
+            'book' => $book,
+            'from' => 'books',
+            'page' => 2,
+            'keyword' => 'Laravel',
+            'sort' => 'oldest',
+        ]));
+    }
+
+    // お気に入り解除後も検索条件とページ番号が保持される
+    public function test_removing_favorite_preserves_search_conditions(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        $user->favoriteBooks()->attach($book->id);
+
+        // 検索条件付きの書籍一覧の2ページ目からお気に入りを解除
+        $response = $this->actingAs($user)
+            ->post(route('favorites.toggle', $book), [
+                'from' => 'books',
+                'page' => 2,
+                'keyword' => 'Laravel',
+                'sort' => 'oldest',
+            ]);
+
+        // お気に入りが解除されたことを確認
+        $this->assertDatabaseMissing('favorites', [
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+
+        // アクセス元情報を保持して書籍詳細画面へ戻ること
+        $response->assertRedirect(route('books.show', [
+            'book' => $book,
+            'from' => 'books',
+            'page' => 2,
+            'keyword' => 'Laravel',
+            'sort' => 'oldest',
+        ]));
+    }
+
+    // 検索条件付きの書籍一覧から詳細画面へ検索条件とページ番号を渡せる
+    public function test_books_list_passes_search_conditions_to_book_detail(): void
+    {
+        $books = Book::factory()->count(11)->create([
+            'title' => 'Laravel',
+        ]);
+        $genre = Genre::factory()->create();
+
+        foreach ($books as $book) {
+            $book->genres()->attach($genre->id);
+        }
+
+        $response = $this->get(
+            route('books.index', [
+                'page' => 2,
+                'keyword' => 'Laravel',
+                'genre' => $genre->id,
+                'sort' => 'oldest',
+            ])
+        );
+
+        $response->assertOk();
+
+        // 2ページ目に表示されている書籍を取得
+        $listedBook = $response->viewData('books')->items()[0];
+
+        $response->assertSee(
+            'href="'.e(route('books.show', [
+                'book' => $listedBook,
+                'from' => 'books',
+                'page' => 2,
+                'keyword' => 'Laravel',
+                'genre' => $genre->id,
+                'sort' => 'oldest',
+            ])).'"',
+            false
+        );
+    }
 }
