@@ -101,4 +101,12 @@ class User extends Authenticatable
             'review_id'
         );
     }
+
+    /**
+     * ユーザーが作成した読書計画。
+     */
+    public function readingPlans(): HasMany
+    {
+        return $this->hasMany(ReadingPlan::class);
+    }
 }
