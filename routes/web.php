@@ -5,6 +5,7 @@ use App\Http\Controllers\BookIsbnController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\RankController;
+use App\Http\Controllers\ReadingPlanController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewLikeController;
 use Illuminate\Support\Facades\Route;
@@ -110,3 +111,38 @@ Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])
 Route::post('/books', [BookController::class, 'store'])
     ->middleware('auth')
     ->name('books.store');
+
+Route::get('/reports', function () {
+    return 'マイレポート画面は未実装です。';
+})->middleware('auth')
+    ->name('reports.index');
+
+Route::get('/reading-plans', [ReadingPlanController::class, 'index'])
+    ->middleware('auth')
+    ->name('reading-plans.index');
+
+// 読了処理は後続Issueで実装
+Route::post('/reading-plans/{readingPlan}/complete', function () {
+    abort(501, '読了機能は未実装です。');
+})->middleware('auth')
+    ->name('reading-plans.complete');
+
+Route::get('/reading-plans/{plan}/edit', function () {
+    abort(501, '編集ボタンは未実装です。');
+})->middleware('auth')
+    ->name('reading-plans.edit');
+
+Route::delete('/reading-plans/{plan}', function () {
+    abort(501, '削除ボタンは未実装です。');
+})->middleware('auth')
+    ->name('reading-plans.destroy');
+
+Route::get('/reading-plans/create', function () {
+    return '読書計画作成画面は未実装です。';
+})->middleware('auth')
+    ->name('reading-plans.create');
+
+Route::get('/notifications', function () {
+    return '通知一覧画面は未実装です。';
+})->middleware('auth')
+    ->name('notifications.index');
