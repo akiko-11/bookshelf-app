@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\BookIsbnController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\RankController;
@@ -16,6 +17,10 @@ Route::get('/', [BookController::class, 'index'])
 Route::get('/books/create', [BookController::class, 'create'])
     ->middleware('auth')
     ->name('books.create');
+
+Route::get('/books/isbn/{isbn}', [BookIsbnController::class, 'index'])
+    ->middleware('auth')
+    ->name('isbn.index');
 
 // ゲストでも閲覧可能
 Route::get('/books/{book}', [BookController::class, 'show'])
