@@ -121,6 +121,14 @@ Route::get('/reading-plans', [ReadingPlanController::class, 'index'])
     ->middleware('auth')
     ->name('reading-plans.index');
 
+Route::get('/reading-plans/create', [ReadingPlanController::class, 'create'])
+    ->middleware('auth')
+    ->name('reading-plans.create');
+
+Route::post('/reading-plans', [ReadingPlanController::class, 'store'])
+    ->middleware('auth')
+    ->name('reading-plans.store');
+
 // 読了処理は後続Issueで実装
 Route::post('/reading-plans/{readingPlan}/complete', function () {
     abort(501, '読了機能は未実装です。');
@@ -136,11 +144,6 @@ Route::delete('/reading-plans/{plan}', function () {
     abort(501, '削除ボタンは未実装です。');
 })->middleware('auth')
     ->name('reading-plans.destroy');
-
-Route::get('/reading-plans/create', function () {
-    return '読書計画作成画面は未実装です。';
-})->middleware('auth')
-    ->name('reading-plans.create');
 
 Route::get('/notifications', function () {
     return '通知一覧画面は未実装です。';

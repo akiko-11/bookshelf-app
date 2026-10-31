@@ -9,6 +9,12 @@
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
+                    @if (session('error'))
+                        <div class="mb-4 rounded-md bg-red-50 p-4 text-red-700">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     <form action="{{ route('reading-plans.store') }}" method="POST" novalidate>
                         @csrf
                         <div class="mb-4">

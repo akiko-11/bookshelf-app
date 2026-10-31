@@ -32,4 +32,17 @@ class ReadingPlanService
 
         return $readingPlans;
     }
+
+    /**
+     * 指定ユーザーの読書計画を新規登録する。
+     */
+    public function createForUser(User $user, array $data): ReadingPlan
+    {
+        return $user->readingPlans()->create([
+            'book_id' => $data['book_id'],
+            'target_date' => $data['target_date'],
+            'status' => ReadingPlanStatus::InProgress,
+            'completed_at' => null,
+        ]);
+    }
 }
