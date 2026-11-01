@@ -9,6 +9,13 @@
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
+                    {{-- DB更新失敗時のエラーメッセージ --}}
+                    @if (session('error'))
+                        <div class="mb-4 rounded-md bg-red-50 p-4 text-red-700">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     <div class="mb-4">
                         <p class="text-sm text-gray-700">対象書籍: <strong>{{ $readingPlan->book->title }}</strong></p>
                         <p class="text-sm text-gray-700">現在の状態:

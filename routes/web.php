@@ -135,10 +135,13 @@ Route::post('/reading-plans/{readingPlan}/complete', function () {
 })->middleware('auth')
     ->name('reading-plans.complete');
 
-Route::get('/reading-plans/{plan}/edit', function () {
-    abort(501, '編集ボタンは未実装です。');
-})->middleware('auth')
+Route::get('/reading-plans/{plan}/edit', [ReadingPlanController::class, 'edit'])
+    ->middleware('auth')
     ->name('reading-plans.edit');
+
+Route::put('/reading-plans/{plan}', [ReadingPlanController::class, 'update'])
+    ->middleware('auth')
+    ->name('reading-plans.update');
 
 Route::delete('/reading-plans/{plan}', function () {
     abort(501, '削除ボタンは未実装です。');
