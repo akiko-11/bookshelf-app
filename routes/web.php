@@ -8,6 +8,7 @@ use App\Http\Controllers\RankController;
 use App\Http\Controllers\ReadingPlanController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewLikeController;
+use App\Models\ReadingPlan;
 use Illuminate\Support\Facades\Route;
 
 // ゲストでも閲覧可能
@@ -117,6 +118,17 @@ Route::get('/reports', function () {
 })->middleware('auth')
     ->name('reports.index');
 
+// 読書計画の共通ルートモデルバインディング
+Route::bind('plan', function ($id) {
+    $plan = ReadingPlan::find($id);
+
+    if ($plan === null) {
+        abort(404, '読書計画が見つかりません。');
+    }
+
+    return $plan;
+});
+
 Route::get('/reading-plans', [ReadingPlanController::class, 'index'])
     ->middleware('auth')
     ->name('reading-plans.index');
@@ -129,10 +141,8 @@ Route::post('/reading-plans', [ReadingPlanController::class, 'store'])
     ->middleware('auth')
     ->name('reading-plans.store');
 
-// 読了処理は後続Issueで実装
-Route::post('/reading-plans/{readingPlan}/complete', function () {
-    abort(501, '読了機能は未実装です。');
-})->middleware('auth')
+Route::post('/reading-plans/{plan}/complete', [ReadingPlanController::class, 'complete'])
+    ->middleware('auth')
     ->name('reading-plans.complete');
 
 Route::get('/reading-plans/{plan}/edit', [ReadingPlanController::class, 'edit'])

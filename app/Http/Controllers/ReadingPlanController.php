@@ -143,4 +143,31 @@ class ReadingPlanController extends Controller
             ->route('reading-plans.index')
             ->with('success', '読書計画を更新しました。');
     }
+
+    /**
+     * 指定された読書計画を読了状態に更新する。
+     *
+     * @param  ReadingPlan  $plan  読了対象の読書計画
+     * @param  ReadingPlanService  $readingPlanService  読書計画サービス
+     * @return RedirectResponse 読了後のリダイレクトレスポンス
+     */
+    public function complete(
+        ReadingPlan $plan,
+        ReadingPlanService $readingPlanService
+    ): RedirectResponse {
+        // 所有者の認可
+        $this->authorize('complete', $plan);
+
+        // 完了済みの場合は409
+        if ($plan->status === ReadingPlanStatus::Completed) {
+            abort(409, 'この読書計画は既に完了しています。');
+        }
+
+        // Serviceで読了処理を実行
+        $readingPlanService->completePlan($plan);
+
+        return redirect()
+            ->route('reading-plans.index')
+            ->with('success', '読書計画を読了しました。');
+    }
 }
