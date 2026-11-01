@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Enums\ReadingPlanStatus;
 use App\Http\Requests\IndexReadingPlanRequest;
 use App\Http\Requests\StoreReadingPlanRequest;
+use App\Http\Requests\UpdateReadingPlanRequest;
 use App\Models\Book;
+use App\Models\ReadingPlan;
 use App\Services\ReadingPlanService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -90,5 +92,55 @@ class ReadingPlanController extends Controller
         return redirect()
             ->route('reading-plans.index')
             ->with('success', '読書計画を登録しました。');
+    }
+
+    /**
+     * 読書計画の編集画面を表示する。
+     *
+     * @param  ReadingPlan  $plan  編集対象の読書計画
+     * @return View 読書計画編集画面
+     */
+    public function edit(ReadingPlan $plan): View
+    {
+        $this->authorize('update', $plan);
+
+        return view('reading-plans.edit', [
+            'readingPlan' => $plan,
+        ]);
+    }
+
+    /**
+     * 指定した読書計画の期日を更新する。
+     *
+     * 更新成功時は一覧画面へリダイレクトし、
+     * DB更新エラー時は入力内容を保持して編集画面へ戻す。
+     *
+     * @param  UpdateReadingPlanRequest  $request  検証済みの更新リクエスト
+     * @param  ReadingPlan  $plan  更新対象の読書計画
+     * @param  ReadingPlanService  $readingPlanService  読書計画サービス
+     * @return RedirectResponse 更新結果に応じたリダイレクトレスポンス
+     */
+    public function update(
+        UpdateReadingPlanRequest $request,
+        ReadingPlan $plan,
+        ReadingPlanService $readingPlanService
+    ): RedirectResponse {
+        try {
+            $readingPlanService->updatePlan(
+                $plan,
+                $request->validated()
+            );
+        } catch (QueryException $e) {
+            report($e);
+
+            return redirect()
+                ->route('reading-plans.edit', $plan)
+                ->withInput()
+                ->with('error', '読書計画の更新に失敗しました。');
+        }
+
+        return redirect()
+            ->route('reading-plans.index')
+            ->with('success', '読書計画を更新しました。');
     }
 }
