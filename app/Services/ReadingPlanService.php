@@ -72,4 +72,20 @@ class ReadingPlanService
 
         return $plan;
     }
+
+    /**
+     * 指定された読書計画を読了状態に更新する。
+     *
+     * @param  ReadingPlan  $plan  読了対象の読書計画
+     * @return ReadingPlan 更新後の読書計画
+     */
+    public function completePlan(ReadingPlan $plan): ReadingPlan
+    {
+        $plan->update([
+            'status' => ReadingPlanStatus::Completed,
+            'completed_at' => now(),
+        ]);
+
+        return $plan;
+    }
 }

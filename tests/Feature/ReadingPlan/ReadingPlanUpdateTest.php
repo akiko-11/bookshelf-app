@@ -136,6 +136,7 @@ class ReadingPlanUpdateTest extends TestCase
             ]);
 
         $response->assertForbidden();
+        $response->assertSeeText('この読書計画を操作する権限がありません。');
 
         $this->assertDatabaseHas('reading_plans', [
             'id' => $plan->id,
@@ -165,6 +166,7 @@ class ReadingPlanUpdateTest extends TestCase
             ]);
 
         $response->assertForbidden();
+        $response->assertSeeText('完了済みの読書計画は編集できません。');
 
         $this->assertDatabaseHas('reading_plans', [
             'id' => $plan->id,
@@ -186,6 +188,7 @@ class ReadingPlanUpdateTest extends TestCase
             ]);
 
         $response->assertNotFound();
+        $response->assertSeeText('読書計画が見つかりません。');
     }
 
     /**
@@ -257,6 +260,7 @@ class ReadingPlanUpdateTest extends TestCase
             ]);
 
         $response->assertForbidden();
+        $response->assertSeeText('期限切れの読書計画は編集できません。');
 
         // DBの期日・ステータスが変更されていないことを確認
         $this->assertDatabaseHas('reading_plans', [

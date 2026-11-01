@@ -89,6 +89,7 @@ class ReadingPlanEditTest extends TestCase
             ->get(route('reading-plans.edit', $plan));
 
         $response->assertForbidden();
+        $response->assertSeeText('この読書計画を操作する権限がありません。');
     }
 
     /**
@@ -108,6 +109,7 @@ class ReadingPlanEditTest extends TestCase
             ->get(route('reading-plans.edit', $plan));
 
         $response->assertForbidden();
+        $response->assertSeeText('完了済みの読書計画は編集できません。');
     }
 
     /**
@@ -121,6 +123,7 @@ class ReadingPlanEditTest extends TestCase
             ->get(route('reading-plans.edit', 999999));
 
         $response->assertNotFound();
+        $response->assertSeeText('読書計画が見つかりません。');
     }
 
     /**
@@ -140,5 +143,6 @@ class ReadingPlanEditTest extends TestCase
             ->get(route('reading-plans.edit', $plan));
 
         $response->assertForbidden();
+        $response->assertSeeText('期限切れの読書計画は編集できません。');
     }
 }

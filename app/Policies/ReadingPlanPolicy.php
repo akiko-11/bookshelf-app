@@ -38,4 +38,20 @@ class ReadingPlanPolicy
 
         return Response::allow();
     }
+
+    /**
+     * 読書計画の読了操作権限を判定する。
+     *
+     * @param  User  $user  ログインユーザー
+     * @param  ReadingPlan  $readingPlan  対象の読書計画
+     * @return Response 認可結果
+     */
+    public function complete(User $user, ReadingPlan $readingPlan): Response
+    {
+        if ($user->id !== $readingPlan->user_id) {
+            return Response::deny('この読書計画を操作する権限がありません。');
+        }
+
+        return Response::allow();
+    }
 }
