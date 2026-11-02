@@ -153,9 +153,8 @@ Route::put('/reading-plans/{plan}', [ReadingPlanController::class, 'update'])
     ->middleware('auth')
     ->name('reading-plans.update');
 
-Route::delete('/reading-plans/{plan}', function () {
-    abort(501, '削除ボタンは未実装です。');
-})->middleware('auth')
+Route::delete('/reading-plans/{plan}', [ReadingPlanController::class, 'destroy'])
+    ->middleware('auth')
     ->name('reading-plans.destroy');
 
 Route::get('/notifications', function () {

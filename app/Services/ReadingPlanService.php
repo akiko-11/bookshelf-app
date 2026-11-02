@@ -6,6 +6,7 @@ use App\Enums\ReadingPlanStatus;
 use App\Models\ReadingPlan;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ReadingPlanService
 {
@@ -87,5 +88,27 @@ class ReadingPlanService
         ]);
 
         return $plan;
+    }
+
+    /**
+     * 指定された読書計画と関連通知を削除する。
+     *
+     * 既読・未読を問わず、対象計画に紐づく通知を削除する。
+     *
+     * @param  ReadingPlan  $plan  削除対象の読書計画
+     */
+    public function deletePlan(ReadingPlan $plan): void
+    {
+        DB::transaction(function () use ($plan): void {
+            // 対象計画に紐づく通知を削除
+            DB::table('notifications')
+                ->where('notifiable_type', (new User)->getMorphClass())
+                ->where('notifiable_id', $plan->user_id)
+                ->where('data->reading_plan_id', $plan->id)
+                ->delete();
+
+            // 読書計画を削除
+            $plan->delete();
+        });
     }
 }

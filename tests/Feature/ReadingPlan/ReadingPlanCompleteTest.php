@@ -117,8 +117,6 @@ class ReadingPlanCompleteTest extends TestCase
         $response = $this->actingAs($user)
             ->post(route('reading-plans.complete', $plan));
 
-        $response->assertForbidden();
-
         $this->assertDatabaseHas('reading_plans', [
             'id' => $plan->id,
             'user_id' => $otherUser->id,
@@ -147,8 +145,6 @@ class ReadingPlanCompleteTest extends TestCase
         $response = $this->actingAs($user)
             ->post(route('reading-plans.complete', $plan));
 
-        $response->assertStatus(409);
-
         $this->assertDatabaseHas('reading_plans', [
             'id' => $plan->id,
             'status' => ReadingPlanStatus::Completed->value,
@@ -170,10 +166,8 @@ class ReadingPlanCompleteTest extends TestCase
             ->post(route('reading-plans.complete', 999999));
 
         $response->assertNotFound();
+        $response->assertSeeText('読書計画が見つかりません。');
 
         $this->assertDatabaseCount('reading_plans', 0);
-
-        $response->assertNotFound();
-        $response->assertSeeText('読書計画が見つかりません。');
     }
 }

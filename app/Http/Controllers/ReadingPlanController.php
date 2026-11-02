@@ -55,7 +55,6 @@ class ReadingPlanController extends Controller
         // 全ユーザーが登録した書籍を取得
         $books = Book::all();
 
-        // 登録画面に書籍データを渡す
         return view('reading-plans.create', [
             'books' => $books,
         ]);
@@ -169,5 +168,35 @@ class ReadingPlanController extends Controller
         return redirect()
             ->route('reading-plans.index')
             ->with('success', '読書計画を読了しました。');
+    }
+
+    /**
+     * 読書計画と関連通知を削除し、一覧画面へリダイレクトする。
+     *
+     * @param  ReadingPlan  $plan  削除対象の読書計画
+     * @param  ReadingPlanService  $readingPlanService  読書計画サービス
+     * @return RedirectResponse 削除結果に応じたリダイレクトレスポンス
+     */
+    public function destroy(
+        ReadingPlan $plan,
+        ReadingPlanService $readingPlanService
+    ): RedirectResponse {
+        // 所有者の認可
+        $this->authorize('delete', $plan);
+
+        try {
+            // Serviceで読書計画と関連通知を削除
+            $readingPlanService->deletePlan($plan);
+        } catch (QueryException $e) {
+            report($e);
+
+            return redirect()
+                ->route('reading-plans.index')
+                ->with('error', '読書計画の削除に失敗しました。');
+        }
+
+        return redirect()
+            ->route('reading-plans.index')
+            ->with('success', '読書計画を削除しました。');
     }
 }
