@@ -54,4 +54,20 @@ class ReadingPlanPolicy
 
         return Response::allow();
     }
+
+    /**
+     * 指定された読書計画の削除を認可する。
+     *
+     * @param  User  $user  操作ユーザー
+     * @param  ReadingPlan  $readingPlan  削除対象の読書計画
+     * @return Response 認可結果
+     */
+    public function delete(User $user, ReadingPlan $readingPlan): Response
+    {
+        if ($user->id !== $readingPlan->user_id) {
+            return Response::deny('この読書計画を操作する権限がありません。');
+        }
+
+        return Response::allow();
+    }
 }

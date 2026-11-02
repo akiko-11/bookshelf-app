@@ -7,6 +7,13 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            {{-- DB操作失敗時のエラーメッセージ --}}
+            @if (session('error'))
+                <div class="mb-4 rounded-md bg-red-50 p-4 text-red-700">
+                        {{ session('error') }}
+                </div>
+            @endif
+
             @if (session('success'))
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
                     {{ session('success') }}

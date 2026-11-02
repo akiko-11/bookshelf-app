@@ -7,7 +7,9 @@ use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Genre;
+use App\Services\ReadingPlanService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -187,16 +189,36 @@ class BookController extends Controller
     }
 
     /**
-     * 書籍を削除し、書籍詳細画面へリダイレクトする。
+     * 書籍と関連する読書計画・通知を削除する。
      *
      * @param  Book  $book  削除対象の書籍
-     * @return RedirectResponse 書籍詳細画面へのリダイレクトレスポンス
+     * @param  ReadingPlanService  $readingPlanService  読書計画サービス
+     * @return RedirectResponse 削除結果に応じたリダイレクトレスポンス
      */
-    public function destroy(Book $book): RedirectResponse
-    {
+    public function destroy(
+        Book $book,
+        ReadingPlanService $readingPlanService
+    ): RedirectResponse {
+        // 書籍の所有者認可
         $this->authorize('delete', $book);
 
-        $book->delete();
+        try {
+            DB::transaction(function () use ($book, $readingPlanService): void {
+                // 関連する読書計画と通知を削除
+                foreach ($book->readingPlans as $plan) {
+                    $readingPlanService->deletePlan($plan);
+                }
+
+                // 書籍を削除
+                $book->delete();
+            });
+        } catch (QueryException $e) {
+            report($e);
+
+            return redirect()
+                ->route('books.show', $book)
+                ->with('error', '書籍の削除に失敗しました。');
+        }
 
         return redirect()
             ->route('books.index')
