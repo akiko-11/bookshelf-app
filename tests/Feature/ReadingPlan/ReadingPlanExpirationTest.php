@@ -150,7 +150,7 @@ class ReadingPlanExpirationTest extends TestCase
         $this->assertDatabaseHas('notifications', [
             'notifiable_id' => $user->id,
             'data->reading_plan_id' => $beforePlan->id,
-            'data->timing' => 'before_3_days',
+            'data->timing' => 'three_days_before',
         ]);
 
         // 当日通知
@@ -164,7 +164,7 @@ class ReadingPlanExpirationTest extends TestCase
         $this->assertDatabaseHas('notifications', [
             'notifiable_id' => $user->id,
             'data->reading_plan_id' => $afterPlan->id,
-            'data->timing' => 'after_3_days',
+            'data->timing' => 'three_days_after',
         ]);
     }
 
@@ -203,7 +203,7 @@ class ReadingPlanExpirationTest extends TestCase
             'notifiable_id' => $user->id,
             'data->reading_plan_id' => $plan->id,
             'data->target_date' => '2026-11-05',
-            'data->timing' => 'before_3_days',
+            'data->timing' => 'three_days_before',
         ]);
     }
 
@@ -299,7 +299,7 @@ class ReadingPlanExpirationTest extends TestCase
         $this->assertDatabaseHas('notifications', [
             'data->reading_plan_id' => $plan->id,
             'data->target_date' => '2026-11-05',
-            'data->timing' => 'before_3_days',
+            'data->timing' => 'three_days_before',
         ]);
 
         // 変更前の期日に基づく当日通知は生成されない
@@ -344,7 +344,7 @@ class ReadingPlanExpirationTest extends TestCase
         $this->assertStringContainsString($targetDate, $data['title']);
 
         // 本文に書籍名・目標期日が含まれる
-        $this->assertStringContainsString($bookTitle, $data['message']);
-        $this->assertStringContainsString($targetDate, $data['message']);
+        $this->assertStringContainsString($bookTitle, $data['body']);
+        $this->assertStringContainsString($targetDate, $data['body']);
     }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookIsbnController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RankController;
 use App\Http\Controllers\ReadingPlanController;
 use App\Http\Controllers\ReviewController;
@@ -157,7 +158,10 @@ Route::delete('/reading-plans/{plan}', [ReadingPlanController::class, 'destroy']
     ->middleware('auth')
     ->name('reading-plans.destroy');
 
-Route::get('/notifications', function () {
-    return '通知一覧画面は未実装です。';
-})->middleware('auth')
+Route::get('/notifications', [NotificationController::class, 'index'])
+    ->middleware('auth')
     ->name('notifications.index');
+
+Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])
+    ->middleware('auth')
+    ->name('notifications.read');
