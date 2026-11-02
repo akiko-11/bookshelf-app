@@ -42,9 +42,9 @@ class ReadingPlanReminderNotification extends Notification
         $targetDate = $this->plan->target_date->format('Y-m-d');
 
         $messages = [
-            'before_3_days' => '期日まであと3日です。',
+            'three_days_before' => '期日まであと3日です。',
             'on_due_date' => '今日は読書計画の期日です。',
-            'after_3_days' => '期日から3日が経過しました。',
+            'three_days_after' => '期日から3日が経過しました。',
         ];
 
         return [
@@ -52,7 +52,7 @@ class ReadingPlanReminderNotification extends Notification
             'target_date' => $targetDate,
             'timing' => $this->timing,
             'title' => "読書計画のお知らせ：{$bookTitle}（{$targetDate}）",
-            'message' => "「{$bookTitle}」の期日（{$targetDate}）：{$messages[$this->timing]}",
+            'body' => "「{$bookTitle}」の期日（{$targetDate}）：{$messages[$this->timing]}",
         ];
     }
 }

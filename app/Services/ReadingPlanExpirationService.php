@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\ReadingPlanStatus;
 use App\Models\ReadingPlan;
 use App\Notifications\ReadingPlanReminderNotification;
+use Illuminate\Support\Facades\Notification;
 
 class ReadingPlanExpirationService
 {
@@ -35,9 +36,9 @@ class ReadingPlanExpirationService
         $today = today('Asia/Tokyo');
 
         $timings = [
-            'before_3_days' => $today->copy()->addDays(3)->toDateString(),
+            'three_days_before' => $today->copy()->addDays(3)->toDateString(),
             'on_due_date' => $today->toDateString(),
-            'after_3_days' => $today->copy()->subDays(3)->toDateString(),
+            'three_days_after' => $today->copy()->subDays(3)->toDateString(),
         ];
 
         foreach ($timings as $timing => $targetDate) {
@@ -45,7 +46,7 @@ class ReadingPlanExpirationService
                 ->with(['user', 'book'])
                 ->where('target_date', $targetDate);
 
-            if ($timing === 'after_3_days') {
+            if ($timing === 'three_days_after') {
                 // 3日後は進行中・期限切れが対象
                 $query->whereIn('status', [
                     ReadingPlanStatus::InProgress->value,
@@ -72,7 +73,8 @@ class ReadingPlanExpirationService
                     continue;
                 }
 
-                $plan->user->notify(
+                Notification::send(
+                    $plan->user,
                     new ReadingPlanReminderNotification($plan, $timing)
                 );
 

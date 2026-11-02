@@ -64,7 +64,7 @@ class ProcessReadingPlansTest extends TestCase
             'notifiable_id' => $user->id,
             'data->reading_plan_id' => $reminderPlan->id,
             'data->target_date' => '2026-11-05',
-            'data->timing' => 'before_3_days',
+            'data->timing' => 'three_days_before',
         ]);
     }
 }
