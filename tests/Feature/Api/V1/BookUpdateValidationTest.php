@@ -524,10 +524,15 @@ class BookUpdateValidationTest extends TestCase
         ];
     }
 
-    // 更新対象の書籍を作成
+    /**
+     * 更新対象の書籍を作成し、所有者のBearerトークンで認証する。
+     */
     private function createExistingBook(): Book
     {
         $user = User::factory()->create();
+
+        $token = $user->createToken('test-token')->plainTextToken;
+        $this->withToken($token);
 
         return Book::factory()->create([
             'user_id' => $user->id,

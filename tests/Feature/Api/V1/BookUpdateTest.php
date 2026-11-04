@@ -12,10 +12,10 @@ class BookUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ゲストでも書籍を更新できる
-    public function test_guest_can_update_book(): void
+    // 所有者は書籍を更新できる
+    public function test_owner_can_update_book(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -45,7 +45,7 @@ class BookUpdateTest extends TestCase
     // 書籍更新時に既存のジャンルが指定したジャンルに置き換わる
     public function test_update_replaces_book_genres(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -80,6 +80,8 @@ class BookUpdateTest extends TestCase
     // 存在しない書籍IDの場合は404エラーになる
     public function test_returns_404_when_book_not_found(): void
     {
+        $user = $this->createAuthenticatedUser();
+
         $data = $this->validBookData();
 
         $response = $this->putJson(
@@ -100,7 +102,7 @@ class BookUpdateTest extends TestCase
     // 更新した書籍情報がJSON形式で返される
     public function test_returns_updated_book_as_json(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -128,7 +130,7 @@ class BookUpdateTest extends TestCase
     // 自分自身のISBNを変更せずに書籍を更新できる
     public function test_can_update_book_with_same_isbn(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -162,7 +164,7 @@ class BookUpdateTest extends TestCase
     // 説明文と画像URLをnullに更新できる
     public function test_can_update_book_with_null_optional_fields(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -199,7 +201,7 @@ class BookUpdateTest extends TestCase
     // 説明文と画像URLを省略しても書籍を更新できる
     public function test_can_update_book_without_optional_fields(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -236,7 +238,7 @@ class BookUpdateTest extends TestCase
     // 異なる登録者IDを送信しても元の登録者IDが維持される
     public function test_update_does_not_change_user_id(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -283,5 +285,19 @@ class BookUpdateTest extends TestCase
             'image_url' => 'https://example.com',
             'genres' => [$genre->id],
         ];
+    }
+
+    /**
+     * テスト用ユーザーを作成し、Bearerトークンで認証する。
+     */
+    private function createAuthenticatedUser(): User
+    {
+        $user = User::factory()->create();
+
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $this->withToken($token);
+
+        return $user;
     }
 }

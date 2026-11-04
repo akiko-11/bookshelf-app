@@ -12,8 +12,10 @@ class BookStoreTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ゲストでも書籍を新規登録できる
-    public function test_guest_can_store_book(): void
+    /**
+     * 認証済みユーザーは書籍を新規登録できる。
+     */
+    public function test_authenticated_user_can_store_book(): void
     {
         $user = User::factory()->create();
         $genre = Genre::factory()->create([
@@ -22,7 +24,10 @@ class BookStoreTest extends TestCase
 
         $data = $this->validBookData($user->id, [$genre->id]);
 
-        $response = $this->postJson('/api/v1/books', $data);
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)
+            ->postJson('/api/v1/books', $data);
 
         $response->assertStatus(201);
 
@@ -54,7 +59,10 @@ class BookStoreTest extends TestCase
             [$genreA->id, $genreB->id]
         );
 
-        $response = $this->postJson('/api/v1/books', $data);
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)
+            ->postJson('/api/v1/books', $data);
 
         $response->assertStatus(201);
         $book = Book::where('isbn', $data['isbn'])->firstOrFail();
@@ -74,7 +82,10 @@ class BookStoreTest extends TestCase
 
         $data = $this->validBookData($user->id, [$genre->id]);
 
-        $response = $this->postJson('/api/v1/books', $data);
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)
+            ->postJson('/api/v1/books', $data);
 
         $response->assertStatus(201);
 
@@ -97,7 +108,10 @@ class BookStoreTest extends TestCase
         $data['description'] = null;
         $data['image_url'] = null;
 
-        $response = $this->postJson('/api/v1/books', $data);
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)
+            ->postJson('/api/v1/books', $data);
 
         $response->assertStatus(201);
 
@@ -124,7 +138,10 @@ class BookStoreTest extends TestCase
 
         unset($data['description'], $data['image_url']);
 
-        $response = $this->postJson('/api/v1/books', $data);
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)
+            ->postJson('/api/v1/books', $data);
 
         $response->assertStatus(201);
 

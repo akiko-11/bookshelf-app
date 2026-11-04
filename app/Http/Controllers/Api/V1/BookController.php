@@ -84,6 +84,9 @@ class BookController extends Controller
     {
         $validated = $request->validated();
 
+        // 登録者はsanctumで認証されたユーザーとする
+        $validated['user_id'] = $request->user()->id;
+
         // ジャンルIDを別に保存
         $genreIds = $validated['genres'];
 
@@ -117,6 +120,9 @@ class BookController extends Controller
      */
     public function update(UpdateBookRequest $request, Book $book): JsonResponse
     {
+        // 書籍の所有者のみ更新を許可
+        $this->authorize('update', $book);
+
         $validated = $request->validated();
 
         // ジャンルIDを別に保存
@@ -154,6 +160,9 @@ class BookController extends Controller
      */
     public function destroy(Book $book): Response
     {
+        // 書籍の所有者のみ削除を許可
+        $this->authorize('delete', $book);
+
         // 書籍を物理削除（関連データは外部キー制約により自動削除）
         $book->delete();
 
