@@ -15,10 +15,10 @@ class BookDestroyTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ゲストでも書籍を物理削除できる
-    public function test_guest_can_destroy_book(): void
+    // 所有者は書籍を物理削除できる
+    public function test_owner_can_destroy_book(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -38,7 +38,7 @@ class BookDestroyTest extends TestCase
     // 書籍削除時にジャンルとの関連付けが削除される
     public function test_destroy_book_detaches_genres(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -67,7 +67,7 @@ class BookDestroyTest extends TestCase
     // 書籍削除時にレビューが削除され、投稿者は維持される
     public function test_destroy_book_deletes_reviews_but_keeps_users(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -102,7 +102,7 @@ class BookDestroyTest extends TestCase
     // 書籍削除時にレビューのいいね情報も削除される
     public function test_destroy_book_deletes_review_likes(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -144,7 +144,7 @@ class BookDestroyTest extends TestCase
     // 書籍削除時にお気に入り情報が削除される
     public function test_destroy_book_deletes_favorites(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAuthenticatedUser();
 
         $book = Book::factory()->create([
             'user_id' => $user->id,
@@ -181,6 +181,8 @@ class BookDestroyTest extends TestCase
     // 存在しない書籍の削除で404を返す
     public function test_destroy_nonexistent_book_returns_404(): void
     {
+        $this->createAuthenticatedUser();
+
         $response = $this->deleteJson(
             '/api/v1/books/99999'
         );
@@ -190,5 +192,19 @@ class BookDestroyTest extends TestCase
         $response->assertExactJson([
             'message' => '指定された書籍が見つかりません。',
         ]);
+    }
+
+    /**
+     * テスト用ユーザーを作成し、Bearerトークンで認証する。
+     */
+    private function createAuthenticatedUser(): User
+    {
+        $user = User::factory()->create();
+
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $this->withToken($token);
+
+        return $user;
     }
 }

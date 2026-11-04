@@ -11,6 +11,16 @@ class BookStoreValidationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $this->withToken($token);
+    }
+
     // 必須項目が未入力の場合はエラーになる
     public function test_rejects_missing_required_fields(): void
     {
@@ -21,18 +31,12 @@ class BookStoreValidationTest extends TestCase
         $response->assertUnprocessable();
 
         $response->assertJsonValidationErrors([
-            'user_id',
             'title',
             'author',
             'isbn',
             'published_date',
             'genres',
         ]);
-
-        $response->assertJsonPath(
-            'errors.user_id.0',
-            '登録者IDは必須です'
-        );
 
         $response->assertJsonPath(
             'errors.title.0',
@@ -56,46 +60,6 @@ class BookStoreValidationTest extends TestCase
         $response->assertJsonPath(
             'errors.genres.0',
             'ジャンルを1つ以上選択してください'
-        );
-
-        $this->assertDatabaseCount('books', 0);
-    }
-
-    // ユーザーIDが整数以外の場合はエラーになる
-    public function test_rejects_non_integer_user_id(): void
-    {
-        $data = $this->validBookData();
-
-        $data['user_id'] = 'string';
-
-        $response = $this->postJson('/api/v1/books', $data);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['user_id']);
-
-        $response->assertJsonPath(
-            'errors.user_id.0',
-            '登録者IDは整数で入力してください'
-        );
-
-        $this->assertDatabaseCount('books', 0);
-    }
-
-    // 存在しないユーザーIDの場合はエラーになる
-    public function test_rejects_nonexistent_user_id(): void
-    {
-        $data = $this->validBookData();
-
-        $data['user_id'] = 99999;
-
-        $response = $this->postJson('/api/v1/books', $data);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['user_id']);
-
-        $response->assertJsonPath(
-            'errors.user_id.0',
-            '指定されたユーザーが存在しません'
         );
 
         $this->assertDatabaseCount('books', 0);
@@ -428,11 +392,9 @@ class BookStoreValidationTest extends TestCase
     // 書籍登録用の正常なリクエストデータを作成
     private function validBookData(): array
     {
-        $user = User::factory()->create();
         $genre = Genre::factory()->create();
 
         return [
-            'user_id' => $user->id,
             'title' => '公開APIの新規登録',
             'author' => 'テスト著者',
             'isbn' => '9784567890124',
