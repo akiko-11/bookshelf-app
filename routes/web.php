@@ -4,6 +4,7 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookIsbnController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\MyReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RankController;
 use App\Http\Controllers\ReadingPlanController;
@@ -114,9 +115,8 @@ Route::post('/books', [BookController::class, 'store'])
     ->middleware('auth')
     ->name('books.store');
 
-Route::get('/reports', function () {
-    return 'マイレポート画面は未実装です。';
-})->middleware('auth')
+Route::get('/reports', [MyReportController::class, 'index'])
+    ->middleware('auth')
     ->name('reports.index');
 
 // 読書計画の共通ルートモデルバインディング

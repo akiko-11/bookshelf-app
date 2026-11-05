@@ -31,8 +31,14 @@ class ReviewLikeController extends Controller
             $message = 'いいねしました。';
         }
 
+        $params = ['book' => $review->book];
+
+        if (request()->input('from') === 'reports') {
+            $params['from'] = 'reports';
+        }
+
         return redirect()
-            ->route('books.show', $review->book)
+            ->route('books.show', $params)
             ->with('success', $message);
     }
 }

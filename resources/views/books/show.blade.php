@@ -190,6 +190,7 @@
                                                     @if(Auth::user()->likedReviews->contains($review->id))
                                                         <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline" novalidate>
                                                             @csrf
+                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
                                                             <button type="submit" class="text-blue-500 hover:text-blue-700 text-sm flex items-center">
                                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                                     class="h-5 w-5 mr-1"
@@ -204,6 +205,7 @@
                                                     @else
                                                         <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline" novalidate>
                                                             @csrf
+                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
                                                             <button type="submit" class="text-gray-500 hover:text-blue-500 text-sm flex items-center">
                                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                                     class="h-5 w-5 mr-1"
@@ -289,6 +291,8 @@
                         'genre' => $genreId,
                         'page' => $page,
                     ]);
+                } elseif ($from === 'reports') {
+                    $backUrl = route('reports.index');
                 } else {
                     $params = [
                         'page' => $from === 'books' ? $page : 1,
@@ -305,7 +309,9 @@
                 }
             @endphp
             <div class="mt-4">
-                <a href="{{ $backUrl }}" class="text-blue-600 hover:underline">← 一覧に戻る</a>
+                <a href="{{ $backUrl }}" class="text-blue-600 hover:underline">
+                    ← {{ $from === 'reports' ? 'マイレポートに戻る' : '一覧に戻る' }}
+                </a>
             </div>
         </div>
     </div>

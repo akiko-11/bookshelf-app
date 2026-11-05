@@ -68,6 +68,11 @@ class FavoriteController extends Controller
                 'genre_id' => request()->input('genre_id'),
                 'page' => $page,
             ];
+        } elseif ($from === 'reports') {
+            $params = [
+                'book' => $book,
+                'from' => 'reports',
+            ];
         } else {
             // アクセス元が指定されていない場合
             $params = ['book' => $book];
