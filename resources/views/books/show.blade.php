@@ -47,6 +47,7 @@
                                             <input type="hidden" name="keyword" value="{{ request()->query('keyword') }}">
                                             <input type="hidden" name="genre" value="{{ request()->query('genre') }}">
                                             <input type="hidden" name="sort" value="{{ request()->query('sort') }}">
+                                            <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
 
                                             <button type="submit" class="text-red-500 hover:text-red-700" title="お気に入りから削除">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
@@ -65,6 +66,7 @@
                                             <input type="hidden" name="keyword" value="{{ request()->query('keyword') }}">
                                             <input type="hidden" name="genre" value="{{ request()->query('genre') }}">
                                             <input type="hidden" name="sort" value="{{ request()->query('sort') }}">
+                                            <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
 
                                             <button type="submit" class="text-gray-400 hover:text-red-500" title="お気に入りに追加">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -191,6 +193,12 @@
                                                         <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline" novalidate>
                                                             @csrf
                                                             <input type="hidden" name="from" value="{{ request()->query('from') }}">
+                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
+                                                            <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
+                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
+                                                            <input type="hidden" name="page" value="{{ request()->query('page', 1) }}">
+                                                            <input type="hidden" name="genre_id" value="{{ request()->query('genre_id', '') }}">
+                                                            <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
                                                             <button type="submit" class="text-blue-500 hover:text-blue-700 text-sm flex items-center">
                                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                                     class="h-5 w-5 mr-1"
@@ -206,6 +214,12 @@
                                                         <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline" novalidate>
                                                             @csrf
                                                             <input type="hidden" name="from" value="{{ request()->query('from') }}">
+                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
+                                                            <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
+                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
+                                                            <input type="hidden" name="page" value="{{ request()->query('page', 1) }}">
+                                                            <input type="hidden" name="genre_id" value="{{ request()->query('genre_id', '') }}">
+                                                            <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
                                                             <button type="submit" class="text-gray-500 hover:text-blue-500 text-sm flex items-center">
                                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                                     class="h-5 w-5 mr-1"
@@ -293,6 +307,16 @@
                     ]);
                 } elseif ($from === 'reports') {
                     $backUrl = route('reports.index');
+                } elseif ($from === 'reading-plans') {
+                    $status = request()->query('status');
+
+                    $backUrl = route('reading-plans.index',
+                        is_string($status) && $status !== ''
+                            ? ['status' => $status]
+                            : []
+                    );
+                } elseif ($from === 'ranking') {
+                    $backUrl = route('ranking.index');
                 } else {
                     $params = [
                         'page' => $from === 'books' ? $page : 1,

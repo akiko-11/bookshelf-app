@@ -4,6 +4,7 @@ namespace Tests\Feature\Navigation;
 
 use App\Models\Book;
 use App\Models\Genre;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -164,6 +165,189 @@ class BookBackNavigationTest extends TestCase
         );
     }
 
+    /**
+     * お気に入り一覧の2ページ目からレビューにいいねしても、
+     * 遷移元とページ番号が保持される。
+     */
+    public function test_review_like_preserves_favorites_page(): void
+    {
+        $user = User::factory()->create();
+        $reviewer = User::factory()->create();
+
+        // お気に入り一覧の2ページ目を作成
+        $books = Book::factory()->count(11)->create();
+        $user->favoriteBooks()->attach($books->pluck('id')->all());
+
+        $response = $this->actingAs($user)->get(
+            route('favorites.index', ['page' => 2])
+        );
+
+        $response->assertOk();
+
+        // 2ページ目に表示される書籍を取得
+        $book = $response->viewData('books')->items()[0];
+
+        // 他ユーザーのレビューを作成
+        $review = Review::factory()
+            ->for($reviewer)
+            ->for($book)
+            ->create(['rating' => 5]);
+
+        $detailUrl = route('books.show', [
+            'book' => $book,
+            'from' => 'favorites',
+            'page' => 2,
+        ]);
+
+        // 書籍詳細を表示
+        $response = $this->get($detailUrl);
+
+        $response->assertOk();
+
+        // 対象レビューのいいねフォームを取得
+        $action = preg_quote(route('reviews.like', $review), '~');
+        $pattern = '~<form\b[^>]*action="'.$action.'"[^>]*>(.*?)</form>~s';
+
+        $this->assertSame(
+            1,
+            preg_match($pattern, $response->getContent(), $matches)
+        );
+
+        // フォームに遷移元とページ番号が含まれる
+        $this->assertStringContainsString(
+            'name="from" value="favorites"',
+            $matches[1]
+        );
+
+        $this->assertStringContainsString(
+            'name="page" value="2"',
+            $matches[1]
+        );
+
+        // レビューにいいねする
+        $response = $this->post(
+            route('reviews.like', $review),
+            [
+                'from' => 'favorites',
+                'page' => 2,
+            ]
+        );
+
+        // いいねが登録される
+        $this->assertDatabaseHas('review_likes', [
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+
+        // ページ番号を保持した書籍詳細へ戻る
+        $response->assertRedirect($detailUrl);
+
+        // 書籍詳細からお気に入り一覧の2ページ目に戻れる
+        $response = $this->get($detailUrl);
+
+        $expectedBackUrl = route('favorites.index', [
+            'page' => 2,
+        ]);
+
+        $response->assertSee(
+            'href="'.e($expectedBackUrl).'"',
+            false
+        );
+    }
+
+    /**
+     * お気に入り一覧の2ページ目からレビューのいいねを解除しても、
+     * 遷移元とページ番号が保持される。
+     */
+    public function test_removing_review_like_preserves_favorites_page(): void
+    {
+        $user = User::factory()->create();
+        $reviewer = User::factory()->create();
+
+        // お気に入り一覧の2ページ目を作成
+        $books = Book::factory()->count(11)->create();
+        $user->favoriteBooks()->attach($books->pluck('id')->all());
+
+        $response = $this->actingAs($user)->get(
+            route('favorites.index', ['page' => 2])
+        );
+
+        $response->assertOk();
+
+        // 2ページ目に表示される書籍を取得
+        $book = $response->viewData('books')->items()[0];
+
+        // 他ユーザーのレビューを作成
+        $review = Review::factory()
+            ->for($reviewer)
+            ->for($book)
+            ->create(['rating' => 5]);
+
+        // あらかじめレビューにいいねを登録
+        $user->likedReviews()->attach($review->id);
+
+        $detailUrl = route('books.show', [
+            'book' => $book,
+            'from' => 'favorites',
+            'page' => 2,
+        ]);
+
+        // いいね解除前の書籍詳細を表示
+        $response = $this->get($detailUrl);
+
+        $response->assertOk();
+
+        // 対象レビューのいいね解除フォームを取得
+        $action = preg_quote(route('reviews.like', $review), '~');
+        $pattern = '~<form\b[^>]*action="'.$action.'"[^>]*>(.*?)</form>~s';
+
+        $this->assertSame(
+            1,
+            preg_match($pattern, $response->getContent(), $matches)
+        );
+
+        // フォームに遷移元とページ番号が保持される
+        $this->assertStringContainsString(
+            'name="from" value="favorites"',
+            $matches[1]
+        );
+
+        $this->assertStringContainsString(
+            'name="page" value="2"',
+            $matches[1]
+        );
+
+        // レビューのいいねを解除
+        $response = $this->post(
+            route('reviews.like', $review),
+            [
+                'from' => 'favorites',
+                'page' => 2,
+            ]
+        );
+
+        // いいねが削除されていることを確認
+        $this->assertDatabaseMissing('review_likes', [
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+
+        // 遷移元とページ番号を保持して書籍詳細へ戻る
+        $response->assertRedirect($detailUrl);
+
+        // 書籍詳細からお気に入り一覧の2ページ目へ戻れる
+        $response = $this->get($detailUrl);
+
+        $expectedBackUrl = route('favorites.index', [
+            'page' => 2,
+        ]);
+
+        $response->assertSee(
+            'href="'.e($expectedBackUrl).'"',
+            false
+        );
+    }
+
     // アクセス元を指定せずに書籍詳細画面を表示した場合、書籍一覧の1ページ目に戻る
     public function test_can_return_to_first_book_list_page_when_no_origin_parameters(): void
     {
@@ -298,6 +482,213 @@ class BookBackNavigationTest extends TestCase
                 'genre' => $genre,
                 'page' => 2,
             ]).'"',
+            false
+        );
+    }
+
+    /**
+     * ジャンル詳細の2ページ目からレビューにいいねしても、
+     * ジャンルIDとページ番号が保持される。
+     */
+    public function test_review_like_preserves_genre_page(): void
+    {
+        $user = User::factory()->create();
+        $reviewer = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        // ジャンル詳細の2ページ目を作成
+        $books = Book::factory()->count(11)->create();
+        $genre->books()->attach($books->pluck('id')->all());
+
+        $response = $this->actingAs($user)->get(
+            route('genres.show', [
+                'genre' => $genre,
+                'page' => 2,
+            ])
+        );
+
+        $response->assertOk();
+
+        // 2ページ目に表示されている書籍を取得
+        $book = $response->viewData('books')->items()[0];
+
+        // 他ユーザーのレビューを作成
+        $review = Review::factory()
+            ->for($reviewer)
+            ->for($book)
+            ->create(['rating' => 5]);
+
+        $detailUrl = route('books.show', [
+            'book' => $book,
+            'from' => 'genre',
+            'genre_id' => $genre->id,
+            'page' => 2,
+        ]);
+
+        // 書籍詳細を表示
+        $response = $this->get($detailUrl);
+
+        $response->assertOk();
+
+        // 対象レビューのいいねフォームを取得
+        $action = preg_quote(route('reviews.like', $review), '~');
+        $pattern = '~<form\b[^>]*action="'.$action.'"[^>]*>(.*?)</form>~s';
+
+        $this->assertSame(
+            1,
+            preg_match($pattern, $response->getContent(), $matches)
+        );
+
+        // フォームに遷移元・ジャンルID・ページ番号が含まれる
+        $this->assertStringContainsString(
+            'name="from" value="genre"',
+            $matches[1]
+        );
+
+        $this->assertStringContainsString(
+            'name="genre_id" value="'.$genre->id.'"',
+            $matches[1]
+        );
+
+        $this->assertStringContainsString(
+            'name="page" value="2"',
+            $matches[1]
+        );
+
+        // レビューにいいねする
+        $response = $this->post(
+            route('reviews.like', $review),
+            [
+                'from' => 'genre',
+                'genre_id' => $genre->id,
+                'page' => 2,
+            ]
+        );
+
+        // いいねが登録される
+        $this->assertDatabaseHas('review_likes', [
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+
+        // 遷移元を保持した書籍詳細へ戻る
+        $response->assertRedirect($detailUrl);
+
+        // 書籍詳細からジャンル詳細の2ページ目へ戻れる
+        $response = $this->get($detailUrl);
+
+        $expectedBackUrl = route('genres.show', [
+            'genre' => $genre,
+            'page' => 2,
+        ]);
+
+        $response->assertSee(
+            'href="'.e($expectedBackUrl).'"',
+            false
+        );
+    }
+
+    /**
+     * ジャンル詳細の2ページ目からレビューのいいねを解除しても、
+     * ジャンルIDとページ番号が保持される。
+     */
+    public function test_removing_review_like_preserves_genre_page(): void
+    {
+        $user = User::factory()->create();
+        $reviewer = User::factory()->create();
+        $genre = Genre::factory()->create();
+
+        // ジャンル詳細の2ページ目を作成
+        $books = Book::factory()->count(11)->create();
+        $genre->books()->attach($books->pluck('id')->all());
+
+        $response = $this->actingAs($user)->get(
+            route('genres.show', [
+                'genre' => $genre,
+                'page' => 2,
+            ])
+        );
+
+        $response->assertOk();
+
+        // 2ページ目に表示されている書籍を取得
+        $book = $response->viewData('books')->items()[0];
+
+        // 他ユーザーのレビューを作成
+        $review = Review::factory()
+            ->for($reviewer)
+            ->for($book)
+            ->create(['rating' => 5]);
+
+        // あらかじめいいねを登録
+        $user->likedReviews()->attach($review->id);
+
+        $detailUrl = route('books.show', [
+            'book' => $book,
+            'from' => 'genre',
+            'genre_id' => $genre->id,
+            'page' => 2,
+        ]);
+
+        // いいね解除前の書籍詳細を表示
+        $response = $this->get($detailUrl);
+
+        $response->assertOk();
+
+        // 対象レビューのいいね解除フォームを取得
+        $action = preg_quote(route('reviews.like', $review), '~');
+        $pattern = '~<form\b[^>]*action="'.$action.'"[^>]*>(.*?)</form>~s';
+
+        $this->assertSame(
+            1,
+            preg_match($pattern, $response->getContent(), $matches)
+        );
+
+        // フォームに遷移元・ジャンルID・ページ番号が含まれる
+        $this->assertStringContainsString(
+            'name="from" value="genre"',
+            $matches[1]
+        );
+
+        $this->assertStringContainsString(
+            'name="genre_id" value="'.$genre->id.'"',
+            $matches[1]
+        );
+
+        $this->assertStringContainsString(
+            'name="page" value="2"',
+            $matches[1]
+        );
+
+        // レビューのいいねを解除
+        $response = $this->post(
+            route('reviews.like', $review),
+            [
+                'from' => 'genre',
+                'genre_id' => $genre->id,
+                'page' => 2,
+            ]
+        );
+
+        // いいねが削除されている
+        $this->assertDatabaseMissing('review_likes', [
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+
+        // 元の遷移情報を保持した書籍詳細へ戻る
+        $response->assertRedirect($detailUrl);
+
+        // 書籍詳細からジャンル詳細の2ページ目に戻れる
+        $response = $this->get($detailUrl);
+
+        $expectedBackUrl = route('genres.show', [
+            'genre' => $genre,
+            'page' => 2,
+        ]);
+
+        $response->assertSee(
+            'href="'.e($expectedBackUrl).'"',
             false
         );
     }

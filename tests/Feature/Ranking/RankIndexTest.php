@@ -121,12 +121,18 @@ class RankIndexTest extends TestCase
         $response->assertStatus(200);
 
         $response->assertSee(
-            'href="'.route('books.show', $bookA).'"',
+            'href="'.e(route('books.show', [
+                'book' => $bookA,
+                'from' => 'ranking',
+            ])).'"',
             false
         );
 
         $response->assertSee(
-            'href="'.route('books.show', $bookB).'"',
+            'href="'.e(route('books.show', [
+                'book' => $bookB,
+                'from' => 'ranking',
+            ])).'"',
             false
         );
     }
