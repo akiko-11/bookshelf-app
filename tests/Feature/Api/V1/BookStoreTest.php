@@ -158,6 +158,59 @@ class BookStoreTest extends TestCase
         ]);
     }
 
+    /**
+     * 未認証ユーザーは書籍を登録できず、
+     * 401と指定されたJSONメッセージが返される。
+     */
+    public function test_guest_cannot_store_book(): void
+    {
+        $response = $this->postJson('/api/v1/books', []);
+
+        $response->assertUnauthorized();
+
+        $response->assertExactJson([
+            'message' => '認証が必要です。',
+        ]);
+
+        $response->assertHeader(
+            'Content-Type',
+            'application/json'
+        );
+    }
+
+    /**
+     * 無効なBearerトークンでは書籍を登録できず、
+     * 401と指定されたJSONメッセージが返される。
+     */
+    public function test_invalid_token_cannot_store_book(): void
+    {
+        $beforeCount = Book::count();
+
+        // 存在しないBearerトークンで登録
+        $response = $this->postJson(
+            '/api/v1/books',
+            [],
+            [
+                'Authorization' => 'Bearer invalid-token',
+            ]
+        );
+
+        // HTTP 401とJSONメッセージを確認
+        $response->assertUnauthorized();
+
+        $response->assertExactJson([
+            'message' => '認証が必要です。',
+        ]);
+
+        $response->assertHeader(
+            'Content-Type',
+            'application/json'
+        );
+
+        // 書籍が登録されていないことを確認
+        $this->assertSame($beforeCount, Book::count());
+    }
+
     // 書籍登録用の正常なリクエストデータを作成
     private function validBookData(int $userId, array $genreIds): array
     {

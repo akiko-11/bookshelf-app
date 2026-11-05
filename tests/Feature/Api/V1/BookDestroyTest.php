@@ -195,6 +195,116 @@ class BookDestroyTest extends TestCase
     }
 
     /**
+     * 未認証ユーザーは書籍を削除できず、
+     * 401と指定されたJSONメッセージが返される。
+     */
+    public function test_guest_cannot_delete_book(): void
+    {
+        // 削除対象の書籍を作成
+        $book = Book::factory()->create();
+
+        // 未認証で削除リクエストを送信
+        $response = $this->deleteJson(
+            "/api/v1/books/{$book->id}"
+        );
+
+        // HTTP 401とJSONメッセージを確認
+        $response->assertUnauthorized();
+
+        $response->assertExactJson([
+            'message' => '認証が必要です。',
+        ]);
+
+        $response->assertHeader(
+            'Content-Type',
+            'application/json'
+        );
+
+        // 書籍が削除されていないことを確認
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+        ]);
+    }
+
+    /**
+     * 無効なBearerトークンでは書籍を削除できず、
+     * 401と指定されたJSONメッセージが返される。
+     */
+    public function test_invalid_token_cannot_delete_book(): void
+    {
+        // 削除対象の書籍を作成
+        $book = Book::factory()->create();
+
+        // 無効なBearerトークンで削除リクエスト
+        $response = $this->deleteJson(
+            "/api/v1/books/{$book->id}",
+            [],
+            [
+                'Authorization' => 'Bearer invalid-token',
+            ]
+        );
+
+        // HTTP 401とJSONメッセージを確認
+        $response->assertUnauthorized();
+
+        $response->assertExactJson([
+            'message' => '認証が必要です。',
+        ]);
+
+        $response->assertHeader(
+            'Content-Type',
+            'application/json'
+        );
+
+        // 書籍が削除されていないことを確認
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+        ]);
+    }
+
+    /**
+     * 認証済みでも他人の書籍は削除できず、
+     * 403と指定されたJSONメッセージが返される。
+     */
+    public function test_non_owner_cannot_delete_book(): void
+    {
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        // 所有者の書籍を作成
+        $book = Book::factory()
+            ->for($owner)
+            ->create();
+
+        // 別ユーザーのBearerトークンで認証
+        $token = $otherUser->createToken('test-token')->plainTextToken;
+        $this->withToken($token);
+
+        // 他人の書籍を削除しようとする
+        $response = $this->deleteJson(
+            "/api/v1/books/{$book->id}"
+        );
+
+        // HTTP 403と指定されたJSONを確認
+        $response->assertForbidden();
+
+        $response->assertExactJson([
+            'message' => 'この書籍を操作する権限がありません。',
+        ]);
+
+        $response->assertHeader(
+            'Content-Type',
+            'application/json'
+        );
+
+        // 書籍が削除されていないことを確認
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'user_id' => $owner->id,
+        ]);
+    }
+
+    /**
      * テスト用ユーザーを作成し、Bearerトークンで認証する。
      */
     private function createAuthenticatedUser(): User

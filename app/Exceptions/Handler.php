@@ -2,8 +2,10 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Throwable;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class Handler extends ExceptionHandler
 {
@@ -23,8 +25,30 @@ class Handler extends ExceptionHandler
      */
     public function register(): void
     {
-        $this->reportable(function (Throwable $e) {
-            //
+        // 401：認証エラー
+        $this->renderable(function (
+            AuthenticationException $e,
+            Request $request
+        ) {
+            if ($request->is('api/v1/books', 'api/v1/books/*')
+                && in_array($request->method(), ['POST', 'PUT', 'DELETE'], true)) {
+                return response()->json([
+                    'message' => '認証が必要です。',
+                ], 401);
+            }
+        });
+
+        // 403：認可エラー
+        $this->renderable(function (
+            AccessDeniedHttpException $e,
+            Request $request
+        ) {
+            if ($request->is('api/v1/books/*')
+                && in_array($request->method(), ['PUT', 'DELETE'], true)) {
+                return response()->json([
+                    'message' => 'この書籍を操作する権限がありません。',
+                ], 403);
+            }
         });
     }
 }
