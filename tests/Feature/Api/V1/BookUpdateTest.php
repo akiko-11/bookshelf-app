@@ -271,6 +271,125 @@ class BookUpdateTest extends TestCase
         $this->assertDatabaseCount('books', 1);
     }
 
+    /**
+     * 未認証ユーザーは書籍を更新できず、
+     * 401と指定されたJSONメッセージが返される。
+     */
+    public function test_guest_cannot_update_book(): void
+    {
+        $book = Book::factory()->create([
+            'title' => '変更前のタイトル',
+        ]);
+
+        $response = $this->putJson(
+            "/api/v1/books/{$book->id}",
+            ['title' => '変更後のタイトル']
+        );
+
+        // HTTP 401とJSONメッセージを確認
+        $response->assertUnauthorized();
+
+        $response->assertExactJson([
+            'message' => '認証が必要です。',
+        ]);
+
+        $response->assertHeader(
+            'Content-Type',
+            'application/json'
+        );
+
+        // 書籍が更新されていないことを確認
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'title' => '変更前のタイトル',
+        ]);
+    }
+
+    /**
+     * 無効なBearerトークンでは書籍を更新できず、
+     * 401と指定されたJSONメッセージが返される。
+     */
+    public function test_invalid_token_cannot_update_book(): void
+    {
+        // 更新対象の書籍を作成
+        $book = Book::factory()->create([
+            'title' => '変更前のタイトル',
+        ]);
+
+        // 無効なBearerトークンで更新リクエスト
+        $response = $this->putJson(
+            "/api/v1/books/{$book->id}",
+            ['title' => '変更後のタイトル'],
+            [
+                'Authorization' => 'Bearer invalid-token',
+            ]
+        );
+
+        // HTTP 401とJSONメッセージを確認
+        $response->assertUnauthorized();
+
+        $response->assertExactJson([
+            'message' => '認証が必要です。',
+        ]);
+
+        $response->assertHeader(
+            'Content-Type',
+            'application/json'
+        );
+
+        // 書籍が更新されていないことを確認
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'title' => '変更前のタイトル',
+        ]);
+    }
+
+    /**
+     * 認証済みでも他人の書籍は更新できず、
+     * 403と指定されたJSONメッセージが返される。
+     */
+    public function test_non_owner_cannot_update_book(): void
+    {
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        // 所有者の書籍を作成
+        $book = Book::factory()->for($owner)->create([
+            'title' => '変更前のタイトル',
+        ]);
+
+        // 別ユーザーのBearerトークンで認証
+        $token = $otherUser->createToken('test-token')->plainTextToken;
+        $this->withToken($token);
+
+        // バリデーションを通過する更新データ
+        $data = $this->validBookData();
+
+        $response = $this->putJson(
+            "/api/v1/books/{$book->id}",
+            $data
+        );
+
+        // HTTP 403と指定されたJSONを確認
+        $response->assertForbidden();
+
+        $response->assertExactJson([
+            'message' => 'この書籍を操作する権限がありません。',
+        ]);
+
+        $response->assertHeader(
+            'Content-Type',
+            'application/json'
+        );
+
+        // DBの書籍情報が変更されていないことを確認
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'user_id' => $owner->id,
+            'title' => '変更前のタイトル',
+        ]);
+    }
+
     // 書籍登録用の正常なリクエストデータを作成
     private function validBookData(): array
     {
