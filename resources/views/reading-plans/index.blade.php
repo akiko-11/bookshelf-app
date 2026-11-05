@@ -57,7 +57,11 @@
                                 @foreach($readingPlans as $plan)
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <a href="{{ route('books.show', $plan->book) }}" class="text-blue-600 hover:text-blue-800">
+                                            <a href="{{ route('books.show', [
+                                                'book' => $plan->book,
+                                                'from' => 'reading-plans',
+                                                'status' => $currentStatus,
+                                            ]) }}" class="text-blue-600 hover:text-blue-800">
                                                 {{ $plan->book->title }}
                                             </a>
                                         </td>

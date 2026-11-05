@@ -73,6 +73,24 @@ class FavoriteController extends Controller
                 'book' => $book,
                 'from' => 'reports',
             ];
+        } elseif ($from === 'reading-plans') {
+            // 読書計画一覧から来た場合、状態フィルターを保持
+            $params = [
+                'book' => $book,
+                'from' => 'reading-plans',
+            ];
+
+            $status = request()->input('status');
+
+            if (is_string($status) && $status !== '') {
+                $params['status'] = $status;
+            }
+        } elseif ($from === 'ranking') {
+            // 評価ランキングから来た場合、遷移元を保持
+            $params = [
+                'book' => $book,
+                'from' => 'ranking',
+            ];
         } else {
             // アクセス元が指定されていない場合
             $params = ['book' => $book];

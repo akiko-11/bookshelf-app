@@ -33,8 +33,36 @@ class ReviewLikeController extends Controller
 
         $params = ['book' => $review->book];
 
-        if (request()->input('from') === 'reports') {
+        $from = request()->input('from');
+
+        if ($from === 'reports') {
+            // マイレポートから来た場合
             $params['from'] = 'reports';
+
+        } elseif ($from === 'ranking') {
+            // 評価ランキングから来た場合、遷移元を保持
+            $params['from'] = 'ranking';
+
+        } elseif ($from === 'reading-plans') {
+            // 読書計画一覧から来た場合
+            $params['from'] = 'reading-plans';
+
+            $status = request()->input('status');
+
+            if (is_string($status) && $status !== '') {
+                $params['status'] = $status;
+            }
+
+        } elseif ($from === 'favorites') {
+            // お気に入り一覧から来た場合
+            $params['from'] = 'favorites';
+            $params['page'] = max(1, (int) request()->input('page', 1));
+
+        } elseif ($from === 'genre' && request()->filled('genre_id')) {
+            // ジャンル詳細から来た場合
+            $params['from'] = 'genre';
+            $params['genre_id'] = request()->input('genre_id');
+            $params['page'] = max(1, (int) request()->input('page', 1));
         }
 
         return redirect()

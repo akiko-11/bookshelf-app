@@ -14,7 +14,10 @@
                     @else
                         <div class="space-y-4">
                             @foreach($rankedBooks as $index => $book)
-                                <a href="{{ route('books.show', $book) }}" class="block hover:bg-gray-50 transition rounded-lg">
+                                <a href="{{ route('books.show', [
+                                    'book' => $book,
+                                    'from' => 'ranking',
+                                ]) }}" class="block hover:bg-gray-50 transition rounded-lg">
                                     <div class="flex items-center p-4 border rounded-lg {{ $index < 3 ? 'border-yellow-300 bg-yellow-50' : 'border-gray-200' }}">
                                         <!-- 順位 -->
                                         <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full {{ $index === 0 ? 'bg-yellow-400 text-white' : ($index === 1 ? 'bg-gray-300 text-white' : ($index === 2 ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600')) }} font-bold text-xl mr-4">

@@ -330,6 +330,41 @@ class ReadingPlanIndexTest extends TestCase
     }
 
     /**
+     * 読書計画一覧の書籍リンクに、
+     * 遷移元と状態フィルターが引き継がれる。
+     */
+    public function test_book_link_preserves_reading_plan_status(): void
+    {
+        $user = User::factory()->create();
+
+        $plan = ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'status' => ReadingPlanStatus::InProgress,
+        ]);
+
+        // 進行中に絞り込んだ読書計画一覧を表示
+        $response = $this->actingAs($user)->get(
+            route('reading-plans.index', [
+                'status' => 'in_progress',
+            ])
+        );
+
+        $response->assertOk();
+
+        // 書籍詳細へのリンクに遷移元と絞り込み状態が含まれる
+        $expectedUrl = route('books.show', [
+            'book' => $plan->book,
+            'from' => 'reading-plans',
+            'status' => 'in_progress',
+        ]);
+
+        $response->assertSee(
+            'href="'.e($expectedUrl).'"',
+            false
+        );
+    }
+
+    /**
      * 指定ユーザーに3種類の状態の読書計画を作成する。
      *
      * @return array{ReadingPlan, ReadingPlan, ReadingPlan}
