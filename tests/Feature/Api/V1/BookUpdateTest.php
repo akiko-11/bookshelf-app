@@ -5,7 +5,9 @@ namespace Tests\Feature\Api\V1;
 use App\Models\Book;
 use App\Models\Genre;
 use App\Models\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class BookUpdateTest extends TestCase
@@ -442,6 +444,71 @@ class BookUpdateTest extends TestCase
         ]);
 
         $this->assertDatabaseCount('book_genre', 1);
+    }
+
+    /**
+     * ジャンル同期時に例外が発生した場合、
+     * 書籍情報とジャンル紐付けが更新前のままである。
+     */
+    public function test_book_and_genres_are_rolled_back_when_genre_sync_fails(): void
+    {
+        $user = $this->createAuthenticatedUser();
+
+        $book = Book::factory()->create([
+            'user_id' => $user->id,
+            'title' => '更新前タイトル',
+        ]);
+
+        // 更新前のジャンル
+        $genreA = Genre::factory()->create();
+
+        $book->genres()->attach($genreA->id);
+
+        // 更新後のジャンル
+        $genreB = Genre::factory()->create();
+
+        $data = $this->validBookData();
+
+        $data['title'] = '更新後タイトル';
+        $data['genres'] = [$genreB->id];
+
+        // ジャンル同期時に意図的に例外を発生させる
+        DB::listen(function (QueryExecuted $query): void {
+            if (preg_match('/insert\s+into\s+[`"]?book_genre[`"]?/i', $query->sql)) {
+                throw new \RuntimeException('ジャンル同期中のテスト用例外');
+            }
+        });
+
+        $response = $this->putJson(
+            "/api/v1/books/{$book->id}",
+            $data
+        );
+
+        $response->assertStatus(500);
+
+        // 書籍情報が更新前のまま
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'title' => '更新前タイトル',
+        ]);
+
+        // 更新後のタイトルになっていない
+        $this->assertDatabaseMissing('books', [
+            'id' => $book->id,
+            'title' => '更新後タイトル',
+        ]);
+
+        // 更新前のジャンル紐付けが残っている
+        $this->assertDatabaseHas('book_genre', [
+            'book_id' => $book->id,
+            'genre_id' => $genreA->id,
+        ]);
+
+        // 更新後のジャンル紐付けが存在しない
+        $this->assertDatabaseMissing('book_genre', [
+            'book_id' => $book->id,
+            'genre_id' => $genreB->id,
+        ]);
     }
 
     // 書籍登録用の正常なリクエストデータを作成
