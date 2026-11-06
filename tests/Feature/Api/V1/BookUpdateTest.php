@@ -390,6 +390,60 @@ class BookUpdateTest extends TestCase
         ]);
     }
 
+    /**
+     * 所有者以外が不正な更新データを送信しても、
+     * バリデーションより認可が優先され403を返す。
+     */
+    public function test_non_owner_cannot_update_book_with_invalid_data(): void
+    {
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        $book = Book::factory()->for($owner)->create([
+            'title' => '変更前のタイトル',
+        ]);
+
+        // 更新前のジャンルを登録
+        $originalGenre = Genre::factory()->create();
+        $book->genres()->attach($originalGenre->id);
+
+        // 所有者以外のBearerトークンで認証
+        $token = $otherUser->createToken('test-token')->plainTextToken;
+        $this->withToken($token);
+
+        // 不正な更新データを用意
+        $data = $this->validBookData();
+        $data['title'] = '';
+
+        // APIへ更新リクエスト
+        $response = $this->putJson(
+            "/api/v1/books/{$book->id}",
+            $data
+        );
+
+        // バリデーションの422より認可の403が優先される
+        $response->assertForbidden();
+
+        $response->assertExactJson([
+            'message' => 'この書籍を操作する権限がありません。',
+        ]);
+
+        // 書籍の情報が変更されていない
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'user_id' => $owner->id,
+            'title' => '変更前のタイトル',
+        ]);
+
+        // ジャンルの関連付けも変更されていない
+        $this->assertDatabaseHas('book_genre', [
+            'book_id' => $book->id,
+            'genre_id' => $originalGenre->id,
+        ]);
+
+        $this->assertDatabaseCount('book_genre', 1);
+    }
+
     // 書籍登録用の正常なリクエストデータを作成
     private function validBookData(): array
     {
