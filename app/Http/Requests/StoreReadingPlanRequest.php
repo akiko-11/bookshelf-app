@@ -38,7 +38,7 @@ class StoreReadingPlanRequest extends FormRequest
                 'bail',
                 'required',
                 'date_format:Y-m-d',
-                'after_or_equal:today',
+                'after_or_equal:'.today('Asia/Tokyo')->toDateString(),
             ],
         ];
     }
