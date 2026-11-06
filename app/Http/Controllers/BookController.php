@@ -7,11 +7,10 @@ use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Genre;
-use App\Services\ReadingPlanService;
+use App\Services\BookService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
@@ -112,26 +111,20 @@ class BookController extends Controller
     /**
      * 書籍を登録し、選択されたジャンルを紐付ける。
      *
-     * @param  StoreBookRequest  $request  バリデーション済みの書籍登録リクエスト
-     * @return RedirectResponse 登録した書籍の詳細画面へのリダイレクト
+     * @param  StoreBookRequest  $request  書籍登録リクエスト
+     * @param  BookService  $bookService  書籍操作サービス
+     * @return RedirectResponse 登録結果のリダイレクト
      */
-    public function store(StoreBookRequest $request): RedirectResponse
-    {
-        $data = $request->validated();
-
-        $genreIds = $data['genres'];
-        unset($data['genres']);
-
-        $data['user_id'] = $request->user()->id;
-
+    public function store(
+        StoreBookRequest $request,
+        BookService $bookService
+    ): RedirectResponse {
         try {
-            $book = DB::transaction(function () use ($data, $genreIds) {
-                $book = Book::create($data);
-
-                $book->genres()->sync($genreIds);
-
-                return $book;
-            });
+            // Serviceで書籍登録とジャンル紐付けを実行
+            $book = $bookService->createBook(
+                $request->validated(),
+                $request->user()->id
+            );
         } catch (QueryException $e) {
             report($e);
 
@@ -162,26 +155,27 @@ class BookController extends Controller
     }
 
     /**
-     * 書籍を更新し、選択されたジャンルを紐付ける。
+     * 書籍情報とジャンルの紐付けを更新する。
      *
      * @param  Book  $book  更新対象の書籍
-     * @param  UpdateBookRequest  $request  バリデーション済みの書籍更新リクエスト
-     * @return RedirectResponse 更新した書籍の詳細画面へのリダイレクト
+     * @param  UpdateBookRequest  $request  書籍更新リクエスト
+     * @param  BookService  $bookService  書籍操作サービス
+     * @return RedirectResponse 更新結果のリダイレクト
      */
-    public function update(Book $book, UpdateBookRequest $request): RedirectResponse
-    {
+    public function update(
+        Book $book,
+        UpdateBookRequest $request,
+        BookService $bookService
+    ): RedirectResponse {
+        // 書籍の所有者認可
         $this->authorize('update', $book);
 
-        $data = $request->validated();
-
-        $genreIds = $data['genres'];
-        unset($data['genres']);
-
         try {
-            DB::transaction(function () use ($book, $data, $genreIds) {
-                $book->update($data);
-                $book->genres()->sync($genreIds);
-            });
+            // Serviceで書籍とジャンルを更新
+            $bookService->updateBook(
+                $book,
+                $request->validated()
+            );
 
             return redirect()
                 ->route('books.show', $book)
@@ -201,26 +195,20 @@ class BookController extends Controller
      * 書籍と関連する読書計画・通知を削除する。
      *
      * @param  Book  $book  削除対象の書籍
-     * @param  ReadingPlanService  $readingPlanService  読書計画サービス
-     * @return RedirectResponse 削除結果に応じたリダイレクトレスポンス
+     * @param  BookService  $bookService  書籍操作サービス
+     * @return RedirectResponse 削除結果のリダイレクトレスポンス
      */
     public function destroy(
         Book $book,
-        ReadingPlanService $readingPlanService
+        BookService $bookService
     ): RedirectResponse {
         // 書籍の所有者認可
         $this->authorize('delete', $book);
 
         try {
-            DB::transaction(function () use ($book, $readingPlanService): void {
-                // 関連する読書計画と通知を削除
-                foreach ($book->readingPlans as $plan) {
-                    $readingPlanService->deletePlan($plan);
-                }
+            // Serviceで書籍と関連データを削除
+            $bookService->deleteBook($book);
 
-                // 書籍を削除
-                $book->delete();
-            });
         } catch (QueryException $e) {
             report($e);
 
