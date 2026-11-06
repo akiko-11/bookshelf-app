@@ -192,11 +192,11 @@
                                                     @if(Auth::user()->likedReviews->contains($review->id))
                                                         <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline" novalidate>
                                                             @csrf
-                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
-                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
-                                                            <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
-                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
+                                                            <input type="hidden" name="from" value="{{ request()->query('from', 'books') }}">
                                                             <input type="hidden" name="page" value="{{ request()->query('page', 1) }}">
+                                                            <input type="hidden" name="keyword" value="{{ request()->query('keyword', '') }}">
+                                                            <input type="hidden" name="genre" value="{{ request()->query('genre', '') }}">
+                                                            <input type="hidden" name="sort" value="{{ request()->query('sort', '') }}">
                                                             <input type="hidden" name="genre_id" value="{{ request()->query('genre_id', '') }}">
                                                             <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
                                                             <button type="submit" class="text-blue-500 hover:text-blue-700 text-sm flex items-center">
@@ -213,11 +213,11 @@
                                                     @else
                                                         <form action="{{ route('reviews.like', $review) }}" method="POST" class="inline" novalidate>
                                                             @csrf
-                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
-                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
-                                                            <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
-                                                            <input type="hidden" name="from" value="{{ request()->query('from') }}">
+                                                            <input type="hidden" name="from" value="{{ request()->query('from', 'books') }}">
                                                             <input type="hidden" name="page" value="{{ request()->query('page', 1) }}">
+                                                            <input type="hidden" name="keyword" value="{{ request()->query('keyword', '') }}">
+                                                            <input type="hidden" name="genre" value="{{ request()->query('genre', '') }}">
+                                                            <input type="hidden" name="sort" value="{{ request()->query('sort', '') }}">
                                                             <input type="hidden" name="genre_id" value="{{ request()->query('genre_id', '') }}">
                                                             <input type="hidden" name="status" value="{{ request()->query('status', '') }}">
                                                             <button type="submit" class="text-gray-500 hover:text-blue-500 text-sm flex items-center">
