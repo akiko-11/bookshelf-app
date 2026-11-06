@@ -39,6 +39,16 @@ class ReviewLikeController extends Controller
             // マイレポートから来た場合
             $params['from'] = 'reports';
 
+        } elseif ($from === 'books') {
+            // 書籍一覧から来た場合、検索条件とページ番号を保持
+            $params['from'] = 'books';
+            $params['page'] = max(1, (int) request()->input('page', 1));
+
+            $params = array_merge(
+                $params,
+                request()->only(['keyword', 'genre', 'sort'])
+            );
+
         } elseif ($from === 'ranking') {
             // 評価ランキングから来た場合、遷移元を保持
             $params['from'] = 'ranking';
