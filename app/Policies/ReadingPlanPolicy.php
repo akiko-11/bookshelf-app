@@ -28,10 +28,11 @@ class ReadingPlanPolicy
             return Response::deny('完了済みの読書計画は編集できません。');
         }
 
-        // 期日を過ぎた期限切れ計画は編集不可
+        // 期限切れの計画で、期日が日本時間の今日より前の場合は編集不可
         if (
             $readingPlan->status === ReadingPlanStatus::Expired
-            && $readingPlan->target_date->isBefore(today())
+            && $readingPlan->target_date->toDateString()
+                < today('Asia/Tokyo')->toDateString()
         ) {
             return Response::deny('期限切れの読書計画は編集できません。');
         }

@@ -77,13 +77,25 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                            {{-- 完了済み以外は読了操作が可能 --}}
                                             @if($plan->status !== \App\Enums\ReadingPlanStatus::Completed)
-                                                <form action="{{ route('reading-plans.complete', $plan) }}" method="POST" class="inline" novalidate>
+                                                <form action="{{ route('reading-plans.complete', $plan) }}"
+                                                    method="POST" class="inline" novalidate>
                                                     @csrf
-                                                    <button type="submit" class="text-green-600 hover:text-green-900">読了する</button>
+                                                    <button type="submit"
+                                                            class="text-green-600 hover:text-green-900">
+                                                        読了する
+                                                    </button>
                                                 </form>
-                                                <a href="{{ route('reading-plans.edit', $plan) }}" class="text-indigo-600 hover:text-indigo-900">編集</a>
                                             @endif
+
+                                            {{-- 編集権限がある場合のみ編集リンクを表示 --}}
+                                            @can('update', $plan)
+                                                <a href="{{ route('reading-plans.edit', $plan) }}"
+                                                class="text-indigo-600 hover:text-indigo-900">
+                                                    編集
+                                                </a>
+                                            @endcan
                                             <form action="{{ route('reading-plans.destroy', $plan) }}" method="POST" class="inline" onsubmit="return confirm('本当に削除しますか？');" novalidate>
                                                 @csrf
                                                 @method('DELETE')
