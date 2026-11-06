@@ -124,13 +124,22 @@ class BookController extends Controller
 
         $data['user_id'] = $request->user()->id;
 
-        $book = DB::transaction(function () use ($data, $genreIds) {
-            $book = Book::create($data);
+        try {
+            $book = DB::transaction(function () use ($data, $genreIds) {
+                $book = Book::create($data);
 
-            $book->genres()->sync($genreIds);
+                $book->genres()->sync($genreIds);
 
-            return $book;
-        });
+                return $book;
+            });
+        } catch (QueryException $e) {
+            report($e);
+
+            return redirect()
+                ->route('books.create')
+                ->withInput()
+                ->with('error', '書籍の登録に失敗しました。');
+        }
 
         return redirect()
             ->route('books.show', $book)
