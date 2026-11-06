@@ -7,6 +7,13 @@
 
     <div class="py-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+            {{-- DB登録失敗時のエラーメッセージ --}}
+            @if (session('error'))
+                <div class="mb-4 rounded-md bg-red-50 p-4 text-red-700">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <!-- ISBN検索 -->
             <div class="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
