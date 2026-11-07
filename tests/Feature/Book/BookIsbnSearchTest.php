@@ -7,6 +7,7 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Request;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -17,6 +18,12 @@ class BookIsbnSearchTest extends TestCase
     // 正しい13桁ISBNで書籍情報を取得できる
     public function test_can_fetch_book_information_by_isbn(): void
     {
+        $isbn = '9784101010014';
+        $apiKey = 'test-google-books-api-key';
+
+        // テスト用のAPIキーを設定
+        config()->set('services.google_books.key', $apiKey);
+
         Http::fake([
             'www.googleapis.com/books/v1/volumes*' => Http::response([
                 'totalItems' => 1,
@@ -33,7 +40,7 @@ class BookIsbnSearchTest extends TestCase
                             'industryIdentifiers' => [
                                 [
                                     'type' => 'ISBN_13',
-                                    'identifier' => '9784101010014',
+                                    'identifier' => $isbn,
                                 ],
                             ],
                         ],
@@ -46,9 +53,10 @@ class BookIsbnSearchTest extends TestCase
 
         $response = $this->actingAs($user)
             ->get(route('isbn.index', [
-                'isbn' => '9784101010014',
+                'isbn' => $isbn,
             ]));
 
+        // 正常なレスポンスを確認
         $response->assertOk();
         $response->assertJson([
             'title' => 'Laravel入門',
@@ -57,6 +65,24 @@ class BookIsbnSearchTest extends TestCase
             'image_url' => 'https://example.com/book.jpg',
             'published_date' => '2025-04-15',
         ]);
+
+        // Google Books APIへの送信内容を確認
+        Http::assertSent(function (HttpRequest $request) use ($isbn, $apiKey) {
+            $url = parse_url($request->url());
+
+            $queryParams = [];
+            parse_str($url['query'] ?? '', $queryParams);
+
+            return $request->method() === 'GET'
+                && ($url['scheme'] ?? null) === 'https'
+                && ($url['host'] ?? null) === 'www.googleapis.com'
+                && ($url['path'] ?? null) === '/books/v1/volumes'
+                && ($queryParams['q'] ?? null) === $isbn
+                && ($queryParams['key'] ?? null) === $apiKey;
+        });
+
+        // 外部HTTPリクエストが1回だけ送信されたことを確認
+        Http::assertSentCount(1);
     }
 
     // ISBNが13桁未満の場合は422エラーになる
@@ -494,5 +520,24 @@ class BookIsbnSearchTest extends TestCase
         $response->assertOk();
 
         $response->assertJsonPath('title', 'Laravel入門');
+    }
+
+    // ISBNを省略したURLはISBN検索ルートに一致しない
+    // ISBNを省略したURLはISBN検索ルートに一致しない
+    public function test_missing_isbn_path_returns_404(): void
+    {
+        // 外部HTTP通信をモックする
+        Http::fake();
+
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->get('/books/isbn/');
+
+        // ISBN未指定URLは404
+        $response->assertNotFound();
+
+        // 外部HTTPリクエストが送信されていないことを確認
+        Http::assertNothingSent();
     }
 }
