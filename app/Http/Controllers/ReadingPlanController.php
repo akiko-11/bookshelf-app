@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ReadingPlanStatus;
+use App\Exceptions\ReadingPlanAlreadyCompletedException;
 use App\Http\Requests\IndexReadingPlanRequest;
 use App\Http\Requests\StoreReadingPlanRequest;
 use App\Http\Requests\UpdateReadingPlanRequest;
@@ -157,13 +158,11 @@ class ReadingPlanController extends Controller
         // 所有者の認可
         $this->authorize('complete', $plan);
 
-        // 完了済みの場合は409
-        if ($plan->status === ReadingPlanStatus::Completed) {
+        try {
+            $readingPlanService->completePlan($plan);
+        } catch (ReadingPlanAlreadyCompletedException $e) {
             abort(409, 'この読書計画は既に完了しています。');
         }
-
-        // Serviceで読了処理を実行
-        $readingPlanService->completePlan($plan);
 
         return redirect()
             ->route('reading-plans.index')

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ReadingPlanStatus;
+use App\Exceptions\ReadingPlanAlreadyCompletedException;
 use App\Models\ReadingPlan;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -82,6 +83,11 @@ class ReadingPlanService
      */
     public function completePlan(ReadingPlan $plan): ReadingPlan
     {
+        // 完了済み計画の再読了を防止
+        if ($plan->status === ReadingPlanStatus::Completed) {
+            throw new ReadingPlanAlreadyCompletedException;
+        }
+
         $plan->update([
             'status' => ReadingPlanStatus::Completed,
             'completed_at' => now(),
