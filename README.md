@@ -1,57 +1,52 @@
-# BookShelf 書籍レビューアプリ
+# BookShelf — 書籍レビュー・読書管理アプリ
 
 ## 概要
 
-書籍の登録・閲覧、レビュー投稿、お気に入り登録などを行うための書籍レビューアプリケーションです。
+BookShelfは、書籍の登録・レビュー・検索に加え、読書計画、リマインダー通知、読書レポートを利用できるLaravel製Webアプリです。Google Books APIによるISBN検索と、Laravel Sanctumで認証する書籍APIも備えています。
 
-基本機能では、以下の機能を実装します。
+## 主な機能
 
-- 会員登録・ログイン・ログアウト
-- 書籍の登録・閲覧・編集・削除
-- レビューの投稿・編集・削除
-- お気に入り登録
-- レビューへのいいね
-- ジャンル管理
-- 書籍ランキング
-- 公開API（JSON）
+| 分類 | 機能 |
+| --- | --- |
+| 認証・書籍 | Fortifyによる会員登録・ログイン・ログアウト、書籍CRUD、ジャンル管理 |
+| レビュー | 5段階評価・コメントの投稿／編集／削除、いいね、書籍ランキングTOP10 |
+| お気に入り | お気に入りの登録・解除・一覧表示 |
+| 書籍検索 | 書名・著者名の検索、ジャンル絞り込み、並び替え（新着・古い順・書名・評価）、ページネーション |
+| ISBN検索 | Google Books APIから書籍情報を取得し、登録・編集フォームへの入力を補助 |
+| マイ読書レポート | レビュー件数・平均評価・読了冊数・評価分布・高評価書籍／ジャンルTOP5 |
+| 読書計画 | 登録・一覧・状態別絞り込み・期日変更・読了・削除 |
+| 通知・バッチ | 期日3日前・当日・3日後のDB通知、既読管理、期限切れ更新・通知生成の日次バッチ |
+| 書籍API | JSONによる一覧・詳細・登録・更新・削除（書き込みはSanctum認証） |
 
-基本機能の実装完了後、検索・外部API連携・読書レポートなどの応用機能を追加予定です。
+書籍の閲覧・ランキングはゲストも利用可能です。書籍の編集・削除、レビューの編集・削除、読書計画の操作などは、それぞれ権限を持つユーザーに制限しています。
 
----
+## 使用技術
+
+| 分類 | 技術 |
+| --- | --- |
+| バックエンド | PHP 8.5、Laravel 10、Fortify、Sanctum |
+| データベース | MySQL 8.4 |
+| フロントエンド | Blade、Tailwind CSS 3、Alpine.js、Vite |
+| 開発環境 | Docker、Laravel Sail、phpMyAdmin |
+| 外部連携 | Google Books API |
+| テスト・整形 | PHPUnit、Laravel Pint |
+
+※ バージョンは本リポジトリの開発環境・設定を基準に記載しています。
 
 ## 環境構築
 
-本プロジェクトは、Docker DesktopとLaravel Sailを使用して動作します。
+**前提：** Git、Docker Desktop（起動済み）、インターネット接続。Windowsの場合はWSL2のターミナルを使用します。
 
-### 前提条件
+本リポジトリにはLaravel 10、Sail、フロントエンドの設定、画面テンプレートが含まれています。初期構築時の`composer create-project`、`sail:install`、`tailwindcss init`や`resources/`の再配置は不要です。
 
-以下を使用できる状態にしてください。
-
-- Git
-- Docker Desktop
-- WSL2（Windowsの場合）
-
-Docker Desktopを起動してから、以降のコマンドを実行してください。
-
-- **Windowsの場合**：WSL2のターミナルで実行します。
-- **Macの場合**：ターミナルで実行します。
-
-### 1. リポジトリをクローン
+### 1. リポジトリ取得・依存パッケージのインストール
 
 ```bash
-git clone git@github.com:akiko-11/bookshelf-app.git
+git clone https://github.com/akiko-11/bookshelf-app.git
 cd bookshelf-app
 ```
 
-### 2. Composer依存パッケージをインストール
-
-ローカル環境でComposerを使用できる場合は、以下を実行します。
-
-```bash
-composer install
-```
-
-Composerを使用できない場合は、Dockerを利用してインストールします。
+Sail起動前にComposer依存関係をインストールします。課題指定のComposer用Dockerイメージを使用する例（WSL2・macOS/Linux）：
 
 ```bash
 docker run --rm \
@@ -63,157 +58,61 @@ docker run --rm \
   composer install
 ```
 
-### 3. 環境設定ファイルを作成
+互換性のあるPHP・Composerをローカルに導入済みなら、`composer install`でも構いません。上記は**初期インストール用のPHP 8.2イメージ**で、アプリ実行用Sailは`compose.yaml`で**PHP 8.5**を指定しています。クリーン環境での一連の手順は別途検証してください。
+
+### 2. `.env`の設定
 
 ```bash
 cp .env.example .env
 ```
 
-`.env`を開き、データベース接続情報を以下のように設定します。
+`.env`のDB設定を次の値に変更し、Google Books APIキーを設定します。
 
-```env
+```dotenv
 DB_CONNECTION=mysql
 DB_HOST=mysql
 DB_PORT=3306
 DB_DATABASE=laravel
 DB_USERNAME=sail
 DB_PASSWORD=password
+GOOGLE_BOOKS_API_KEY=取得したAPIキー
 ```
 
-### 4. Laravel Sailを起動
+Google CloudでBooks APIの利用設定とAPIキーの取得が必要です。`.env`やAPIキーはGitHubに公開しないでください。
+
+### 3. Sail起動・初期化
 
 ```bash
 ./vendor/bin/sail up -d
-```
-
-コンテナの状態を確認します。
-
-```bash
-./vendor/bin/sail ps
-```
-
-以下のサービスが起動していることを確認してください。
-
-- `laravel.test`
-- `mysql`
-- `phpmyadmin`
-
-### 5. アプリケーションキーを生成
-
-```bash
 ./vendor/bin/sail artisan key:generate
-```
-
-### 6. フロントエンドの依存パッケージをインストール
-
-```bash
 ./vendor/bin/sail npm install
-```
-
-### 7. マイグレーションと初期データを実行
-
-```bash
 ./vendor/bin/sail artisan migrate --seed
 ```
 
-既存のテーブルを削除して初期状態から作り直す場合は、以下を実行します。
+`migrate --seed`で開発用のユーザー・書籍などを登録します。既存DBを**全削除して再作成**する場合のみ`./vendor/bin/sail artisan migrate:fresh --seed`を使用してください。
 
-```bash
-./vendor/bin/sail artisan migrate:fresh --seed
-```
+`config/app.php`の日本語設定（`locale = ja`）と`lang/ja/`は導入済みです。
 
-> `migrate:fresh`を実行すると、データベース内の既存データはすべて削除されます。
+### 4. Vite起動・アクセス
 
-### 8. Vite開発サーバーを起動
+別ターミナルで実行します。
 
 ```bash
 ./vendor/bin/sail npm run dev
 ```
 
-画面を確認している間は、このコマンドを実行したままにしてください。
-
-停止する場合は、実行中のターミナルで `Ctrl + C` を押します。
-
-### 9. アクセス（URL）
-
-ブラウザで以下へアクセスします。
-
-| 画面 | URL |
+| 用途 | 開発環境URL |
 | --- | --- |
-| アプリケーション | `http://localhost` |
-| 会員登録 | `http://localhost/register` |
-| ログイン | `http://localhost/login` |
-| phpMyAdmin | `http://localhost:8080` |
+| アプリ（書籍一覧） | http://localhost |
+| 会員登録 | http://localhost/register |
+| ログイン | http://localhost/login |
+| phpMyAdmin | http://localhost:8080 |
 
-### 10. Sailエイリアスを設定（任意）
+停止：`./vendor/bin/sail down`。ポートを変更した場合は`.env`の設定値を使用してください。
 
-毎回 `./vendor/bin/sail` と入力せず、`sail`のみで実行したい場合は以下を設定します。
+## ER図・DB設計
 
-bashの場合：
-
-```bash
-echo "alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'" >> ~/.bashrc
-source ~/.bashrc
-```
-
-zshの場合：
-
-```bash
-echo "alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'" >> ~/.zshrc
-source ~/.zshrc
-```
-
-設定後は以下のように実行できます。
-
-```bash
-sail artisan migrate --seed
-sail npm run dev
-```
-
-### 11. コンテナを停止
-
-```bash
-./vendor/bin/sail down
-```
-
-### Apple Silicon搭載Macについて
-
-Apple Silicon搭載MacでSail起動時に以下のエラーが発生する場合があります。
-
-```text
-no matching manifest for linux/arm64/v8
-```
-
-その場合は、`compose.yaml`のMySQLサービスに以下を追加します。
-
-```yaml
-platform: 'linux/amd64'
-```
-
----
-
-## 使用技術
-
-| 技術 | バージョン・用途 |
-| --- | --- |
-| HTML | 画面構造 |
-| Tailwind CSS | 3.4.19 / スタイル設定 |
-| Alpine.js | 3.17.4 / フロントエンド |
-| PHP | 8.5.12 |
-| Laravel | 10.50.3 |
-| MySQL | 8.4.10 |
-| Vite | フロントエンド開発環境 |
-| Docker | コンテナ環境 |
-| Laravel Sail | Docker開発環境の操作 |
-| phpMyAdmin | データベース管理 |
-
----
-
-
-
-## ER図
-
-BookShelfでは、書籍・ジャンル・レビュー・お気に入り・レビューへのいいね情報を、以下の7つの業務テーブルで管理しています。
+主要な業務テーブルは9つです。`users`や`books`などは通常の外部キー、`notifications`はLaravelのポリモーフィック関連で紐づきます。
 
 ```mermaid
 erDiagram
@@ -221,33 +120,30 @@ erDiagram
         bigint id PK
         varchar name
         varchar email UK
-        timestamp email_verified_at
+        timestamp email_verified_at "NULL"
         varchar password
-        varchar remember_token
+        varchar remember_token "NULL"
         timestamp created_at
         timestamp updated_at
     }
-
     genres {
         bigint id PK
         varchar name UK
         timestamp created_at
         timestamp updated_at
     }
-
     books {
         bigint id PK
         bigint user_id FK
         varchar title
         varchar author
-        varchar isbn UK
+        varchar isbn UK "13 chars"
         date published_date
-        text description
-        varchar image_url
+        text description "NULL"
+        varchar image_url "NULL"
         timestamp created_at
         timestamp updated_at
     }
-
     book_genre {
         bigint id PK
         bigint book_id FK
@@ -255,7 +151,6 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-
     reviews {
         bigint id PK
         bigint user_id FK
@@ -265,7 +160,6 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-
     favorites {
         bigint id PK
         bigint user_id FK
@@ -273,7 +167,6 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-
     review_likes {
         bigint id PK
         bigint user_id FK
@@ -281,154 +174,97 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+    reading_plans {
+        bigint id PK
+        bigint user_id FK
+        bigint book_id FK
+        date target_date
+        varchar status "11 chars, default in_progress"
+        timestamp completed_at "NULL"
+        timestamp created_at
+        timestamp updated_at
+    }
+    notifications {
+        uuid id PK
+        varchar type
+        varchar notifiable_type "polymorphic"
+        bigint notifiable_id "polymorphic"
+        text data
+        timestamp read_at "NULL"
+        timestamp created_at
+        timestamp updated_at
+    }
 
     users ||--o{ books : registers
     users ||--o{ reviews : writes
-    users ||--o{ favorites : favorites
+    users ||--o{ favorites : owns
     users ||--o{ review_likes : likes
-
-    books ||--o{ book_genre : has
-    genres ||--o{ book_genre : categorizes
-
+    users ||--o{ reading_plans : plans
+    users ||--o{ notifications : receives
+    books ||--o{ book_genre : categorized_by
+    genres ||--o{ book_genre : contains
     books ||--o{ reviews : receives
-    books ||--o{ favorites : receives
-
+    books ||--o{ favorites : saved_as
+    books ||--o{ reading_plans : planned_in
     reviews ||--o{ review_likes : receives
 ```
 
-### 制約
+- **UNIQUE：** `users.email`、`genres.name`、`books.isbn`、`book_genre(book_id, genre_id)`、`reviews(user_id, book_id)`、`favorites(user_id, book_id)`、`review_likes(user_id, review_id)`。
+- **外部キー：** `book_genre.genre_id`は削除時`RESTRICT`、その他の上記業務テーブルの外部キーは`CASCADE`。`notifications.notifiable_id`にはDB外部キー制約を設定していません。
+- **読書計画：** `status`は`in_progress`、`completed`、`expired`。同一ユーザー・同一書籍の進行中計画の重複はアプリ側のバリデーションで防止します（DBの複合UNIQUE制約ではありません）。
+- `personal_access_tokens`、`password_reset_tokens`、`failed_jobs`、`migrations`などの補助テーブルは図から省略しています。
 
-各業務テーブルには主キーとして `id` を設定し、Laravelの規約に従って `created_at` と `updated_at` を設けています。
+## 書籍APIエンドポイント一覧
 
-#### UNIQUE制約
+ベースパスは`/api/v1/books`。GETは認証不要、POST・PUT・DELETEは`auth:sanctum`が必要です。
 
-| テーブル | 対象カラム | 内容 |
-| --- | --- | --- |
-| users | email | メールアドレスの重複を禁止 |
-| genres | name | ジャンル名の重複を禁止 |
-| books | isbn | ISBNの重複を禁止 |
-| book_genre | book_id, genre_id | 同じ書籍とジャンルの組み合わせを禁止 |
-| reviews | user_id, book_id | 同じユーザーによる同一書籍への重複レビューを禁止 |
-| favorites | user_id, book_id | 同じユーザーによる同一書籍のお気に入り重複登録を禁止 |
-| review_likes | user_id, review_id | 同じユーザーによる同一レビューへの重複いいねを禁止 |
+| メソッド | パス | 概要 | 認証 | 成功時 |
+| --- | --- | --- | --- | --- |
+| GET | `/api/v1/books` | 書籍一覧・検索 | 不要 | 200 |
+| GET | `/api/v1/books/{book}` | 書籍詳細 | 不要 | 200 |
+| POST | `/api/v1/books` | 書籍登録 | Sanctum | 201 |
+| PUT | `/api/v1/books/{book}` | 書籍更新 | Sanctum＋所有者 | 200 |
+| DELETE | `/api/v1/books/{book}` | 書籍削除 | Sanctum＋所有者 | 204 |
 
-複合UNIQUE制約は、複数カラムの組み合わせに対して設定しています。
+- **GET一覧：** `keyword`（書名の部分一致）、`genre_id`、`page`、`per_page`（1～100、既定20）を指定できます。Web画面の検索は書名・著者名の両方が対象で、APIとは異なります。
+- **POST・PUT：** `title`、`author`、13桁の`isbn`、`published_date`、1件以上の`genres`配列が必須。`description`、`image_url`は任意です。登録者は認証ユーザーから設定します。
+- **主なエラー：** 401（未認証）、403（所有者以外）、404（書籍なし）、422（入力不正）。エラー時はJSONで返します。
 
-`reviews` テーブルの複合UNIQUE制約は、追加マイグレーション `2026_10_19_020253_add_unique_user_book_to_reviews_table.php` で定義しています。
+## Google Books API連携
 
-#### NOT NULL・NULL許可
+ログイン後、`GET /books/isbn/{isbn}`からISBN-13（13桁の数字）で書籍情報を検索し、入力補助用JSON（タイトル・著者・説明・表紙URL・出版日）を取得します。検索だけでは書籍登録されません。
 
-| テーブル | カラム | 制約 |
-| --- | --- | --- |
-| users | name, email, password | NOT NULL |
-| users | email_verified_at, remember_token | NULL許可 |
-| genres | name | NOT NULL |
-| books | user_id, title, author, isbn, published_date | NOT NULL |
-| books | description, image_url | NULL許可 |
-| book_genre | book_id, genre_id | NOT NULL |
-| reviews | user_id, book_id, rating, comment | NOT NULL |
-| favorites | user_id, book_id | NOT NULL |
-| review_likes | user_id, review_id | NOT NULL |
+Google Books APIの結果から**同じISBN-13を持つ書籍**を採用し、出版日は有効な`YYYY-MM-DD`形式のみ返します。
 
-#### その他の制約
-
-- `books.isbn`：13文字の文字列として保存
-- `reviews.rating`：符号なしTINYINT型で保存
-- レビューの評価は、アプリケーション側のバリデーションで1〜5に制限
-- レビューのコメントは、アプリケーション側のバリデーションで最大1000文字に制限
-
-### リレーション
-
-| モデル | リレーション | 関係 |
-| --- | --- | --- |
-| User → Book | books() | 1対多 |
-| User → Review | reviews() | 1対多 |
-| User → Favorite | favorites() | 1対多 |
-| User → ReviewLike | reviewLikes() | 1対多 |
-| Book → Review | reviews() | 1対多 |
-| Book → Favorite | favorites() | 1対多 |
-| Book → Genre | genres() | 多対多 |
-| Genre → Book | books() | 多対多 |
-| Review → ReviewLike | reviewLikes() | 1対多 |
-| User → Book | favoriteBooks() | 多対多 |
-| User → Review | likedReviews() | 多対多 |
-
-多対多のリレーションには、以下の中間テーブルを使用しています。
-
-- `book_genre`：書籍とジャンル
-- `favorites`：ユーザーとお気に入り書籍
-- `review_likes`：ユーザーといいねしたレビュー
-
-いずれも `id` を主キーとし、関連する外部キーの組み合わせにUNIQUE制約を設定しています。
-
-### 外部キー
-
-| テーブル | 外部キー | 参照先 | 削除時の動作 |
-| --- | --- | --- | --- |
-| books | user_id | users.id | CASCADE |
-| book_genre | book_id | books.id | CASCADE |
-| book_genre | genre_id | genres.id | RESTRICT |
-| reviews | user_id | users.id | CASCADE |
-| reviews | book_id | books.id | CASCADE |
-| favorites | user_id | users.id | CASCADE |
-| favorites | book_id | books.id | CASCADE |
-| review_likes | user_id | users.id | CASCADE |
-| review_likes | review_id | reviews.id | CASCADE |
-
-#### CASCADE
-
-親レコードを削除すると、関連する子レコードも自動的に削除されます。
-
-例：
-
-- 書籍削除時に、その書籍のレビュー・お気に入り・ジャンルとの関連付けを削除
-- レビュー削除時に、そのレビューへのいいね情報を削除
-- ユーザー削除時に、そのユーザーが登録した書籍・レビュー・お気に入り・いいね情報を削除
-
-#### RESTRICT
-
-参照されている親レコードの削除を制限します。
-
-`book_genre.genre_id` に設定しているため、書籍との関連付けが存在するジャンルは削除できません。
-
-### 補助テーブルについて
-
-LaravelやFortifyなどのフレームワークが使用する以下の補助テーブルは、業務テーブルとは分けて管理しています。
-
-| テーブル | 用途 |
+| HTTP | 内容 |
 | --- | --- |
-| password_reset_tokens | パスワードリセット用トークンの管理 |
-| failed_jobs | 失敗したキュージョブの記録 |
-| personal_access_tokens | APIトークンの管理 |
-| migrations | マイグレーションの実行履歴 |
+| 200 | 取得成功 |
+| 422 | ISBNの形式が不正 |
+| 404 | 一致する書籍がない（またはISBNを含まないURL） |
+| 502 / 504 | 外部APIエラー / タイムアウト |
 
-これらはアプリケーションの主要な業務データを管理するテーブルではないため、上記ER図には含めていません。
+## 読書計画・通知・Scheduler
 
-Fortifyの二要素認証機能は基本要件の対象外として無効化しています。二要素認証用カラムはマイグレーションに定義されていますが、本ER図では省略しています。
+- **読書計画：** 進行中は期日変更・読了が可能。完了済みは編集・再読了不可（再読了時HTTP 409）。期限切れでも読了は可能です。操作は原則所有者本人に制限されます。
+- **リマインダー：** 期日の3日前・当日・3日後にDB通知を生成します。3日前・当日は進行中、3日後は進行中・期限切れが対象で、同じ通知の重複生成を防止します。
+- **日次バッチ：** `reading-plans:process`で期限切れ更新と通知生成を実施。`app/Console/Kernel.php`で**毎日20:00（Asia/Tokyo）**に設定されています。
 
----
+```bash
+# バッチを手動実行
+./vendor/bin/sail artisan reading-plans:process
 
-## APIエンドポイント一覧
+# スケジュールの確認
+./vendor/bin/sail artisan schedule:list
 
-基本機能では、以下の公開APIを実装します。
+# ローカル開発でスケジューラーを常駐（別ターミナル）
+./vendor/bin/sail artisan schedule:work
+```
 
-| HTTPメソッド | URI | 概要 | 認証 |
-| --- | --- | --- | --- |
-| GET | `/api/v1/books` | 書籍一覧を取得 | 不要 |
-| GET | `/api/v1/books/{book}` | 書籍詳細を取得 | 不要 |
-| POST | `/api/v1/books` | 書籍を新規登録 | 不要 |
-| PUT | `/api/v1/books/{book}` | 書籍を更新 | 不要 |
-| DELETE | `/api/v1/books/{book}` | 書籍を削除 | 不要 |
+Sailの起動だけでは日次処理は自動実行されません。本番環境では、例えばCronで毎分`php artisan schedule:run`を起動する設定が必要です（実行環境に合わせて調整）。
 
-基本機能では公開APIに認証を設定しません。
+## 開発用ログイン情報
 
-応用機能では、POST / PUT / DELETE の書き込み系APIにLaravel Sanctumによるトークン認証を追加予定です。
-
----
-
-## ログイン情報
-
-Seederを実行すると、以下の動作確認用ユーザーが作成されます。
+`migrate --seed`で作成されます。**開発用のみ**の情報です。
 
 | 名前 | メールアドレス | パスワード |
 | --- | --- | --- |
@@ -438,43 +274,13 @@ Seederを実行すると、以下の動作確認用ユーザーが作成され�
 | 佐藤美咲 | `sato@example.com` | `password` |
 | 高橋健太 | `takahashi@example.com` | `password` |
 
----
-
-## テスト
-
-本プロジェクトでは、PHPUnitを使用してUnit TestとFeature Testを実装しています。
-
-### テスト実行
-
-すべてのテストを実行する場合：
+## テスト・コード品質
 
 ```bash
-./vendor/bin/sail artisan test
+./vendor/bin/sail artisan test                 # 全テスト
+./vendor/bin/sail artisan test --coverage      # カバレッジ（Xdebug等が必要）
+./vendor/bin/sail pint --test                  # コードスタイル確認
 ```
-
-特定のテストディレクトリを実行する場合：
-
-```bash
-./vendor/bin/sail artisan test tests/Feature
-```
-
-### テストカバレッジ
-
-```bash
-./vendor/bin/sail artisan test --coverage
-```
-
-※ カバレッジ計測には、Xdebugなどのカバレッジドライバーを有効にする必要があります。
-
-### コードスタイルの確認
-
-Laravel Pintを使用してコードスタイルを確認します。
-
-```bash
-./vendor/bin/sail pint --test
-```
-
----
 
 ## 作成者
 
